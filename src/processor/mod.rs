@@ -3,3 +3,8 @@ mod processor;
 mod decoders;
 mod metric_observer;
 mod telemetry;
+mod adv_metric_balance;
+mod adv_metric_steering_response;
+mod adv_metric_smoothness;
+mod adv_metric_braking_signal;
+mod adv_metric_gg;

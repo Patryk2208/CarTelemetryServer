@@ -1,33 +1,19 @@
-use std::collections::HashMap;
-use std::time::Instant;
-use crate::processor::types::{Metrics, TelemetryValue};
+use crate::processor::types::{TelemetryValue};
+use crate::processor::adv_metric_balance::ProcessedBalance;
+use crate::processor::adv_metric_steering_response::ProcessedSteeringResponse;
+use crate::processor::adv_metric_braking_signal::ProcessedBrakingSignal;
+use crate::processor::adv_metric_smoothness::ProcessedSmoothness;
+use crate::processor::adv_metric_gg::ProcessedGG;
 
-pub struct GGDiagram {
-    pub metrics: HashMap<Metrics, f32>,
-    pub timestamp: Instant
+pub enum ProcessedTelemetry {
+    GG(ProcessedGG),
+    Balance(ProcessedBalance),
+    SteeringResponse(ProcessedSteeringResponse),
+    BrakingSignal(ProcessedBrakingSignal),
+    Smoothness(ProcessedSmoothness)
 }
 
-pub struct Balance {
-    pub metrics: HashMap<Metrics, f32>,
-    pub expected_yaw_rate: f32,
-    pub timestamp: Instant
-}
-
-pub struct SteeringResponse {
-    pub metrics: HashMap<Metrics, f32>,
-    pub yaw_rate: f32,
-    pub timestamp: Instant
-}
-
-pub struct DerivedBrakingSignal {
-    pub metrics: HashMap<Metrics, f32>,
-    pub timestamp: Instant
-}
-
-pub struct Smoothness {
-    pub metrics: HashMap<Metrics, f32>,
-    pub timestamp: Instant
-}
+#[macro_export]
 macro_rules! update_telemetry {
     ($self:ident, $telemetry_value:ident) => {
         $self.metrics
@@ -39,37 +25,6 @@ macro_rules! update_telemetry {
     };
 }
 
-pub trait ProcessedTelemetry {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue);
-}
-
-impl ProcessedTelemetry for GGDiagram {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
-        update_telemetry!(self, telemetry_value);
-        //todo update GG data
-    }
-}
-impl ProcessedTelemetry for Balance {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
-        update_telemetry!(self, telemetry_value);
-        //todo update balance data
-    }
-}
-impl ProcessedTelemetry for SteeringResponse {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
-        update_telemetry!(self, telemetry_value);
-        //todo update steering response data
-    }
-}
-impl ProcessedTelemetry for DerivedBrakingSignal {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
-        update_telemetry!(self, telemetry_value);
-        //todo update braking signal data
-    }
-}
-impl ProcessedTelemetry for Smoothness {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
-        update_telemetry!(self, telemetry_value);
-        //todo update smoothness data
-    }
+pub trait Telemetry {
+    fn update_metric(&mut self, telemetry_value: &TelemetryValue) -> ProcessedTelemetry;
 }
