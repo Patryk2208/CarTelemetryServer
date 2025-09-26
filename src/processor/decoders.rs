@@ -1,9 +1,10 @@
 use std::time::Instant;
 use socketcan::{CanFrame};
 use socketcan::frame::AsPtr;
+use crate::processor::processor::TelemetryProcessor;
 use crate::processor::types::{Metrics, TelemetryDecoder, TelemetryValue};
 
-struct SpeedDecoder;
+pub struct SpeedDecoder;
 impl TelemetryDecoder for SpeedDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: Instant) -> TelemetryValue {
         let bytes = frame.as_bytes();
@@ -18,8 +19,8 @@ impl TelemetryDecoder for SpeedDecoder {
     }
 }
 
-struct GForceLongDecoder;
-impl GForceLongDecoder {
+pub struct GForceLongDecoder;
+impl TelemetryDecoder for GForceLongDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: Instant) -> TelemetryValue {
         let bytes = frame.as_bytes();
         let raw_value = u16::from_be_bytes([bytes[0], bytes[1]]);
@@ -34,8 +35,8 @@ impl GForceLongDecoder {
     }
 }
 
-struct GForceLatDecoder;
-impl GForceLatDecoder {
+pub struct GForceLatDecoder;
+impl TelemetryDecoder for GForceLatDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: Instant) -> TelemetryValue {
         let bytes = frame.as_bytes();
         let raw_value = u16::from_be_bytes([bytes[1], bytes[2]]);
@@ -50,8 +51,8 @@ impl GForceLatDecoder {
     }
 }
 
-struct YawRateDecoder;
-impl YawRateDecoder {
+pub struct YawRateDecoder;
+impl TelemetryDecoder for YawRateDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: Instant) -> TelemetryValue {
         let bytes = frame.as_bytes();
         let raw_value = u16::from_be_bytes([bytes[3], bytes[4]]);
@@ -66,8 +67,8 @@ impl YawRateDecoder {
     }
 }
 
-struct SteeringAngleDecoder;
-impl SteeringAngleDecoder {
+pub struct SteeringAngleDecoder;
+impl TelemetryDecoder for SteeringAngleDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: Instant) -> TelemetryValue {
         let bytes = frame.as_bytes();
         let raw_value = i16::from_le_bytes([bytes[0], bytes[1]]);
