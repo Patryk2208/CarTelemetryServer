@@ -4,7 +4,6 @@ use crate::processor::adv_metric_braking_signal::ProcessedBrakingSignal;
 use crate::processor::adv_metric_gg::ProcessedGG;
 use crate::processor::adv_metric_smoothness::ProcessedSmoothness;
 use crate::processor::adv_metric_steering_response::ProcessedSteeringResponse;
-use crate::processor::telemetry::ProcessedTelemetry;
 use crate::common::circular_buffer::CircularBuffer;
 
 pub struct MetricConcat {

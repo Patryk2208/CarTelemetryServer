@@ -1,12 +1,14 @@
 use tokio::sync::broadcast;
 use crate::processor::telemetry::ProcessedTelemetry;
+use crate::server::flow_control::FlowControl;
 use crate::server::metric_concatenation::MetricConcat;
-use crate::server::websocket_interface::WebsocketInterface;
+use crate::server::websocket_interface::WebSocketServer;
 
 pub struct Server {
     pub broadcast_receiver: broadcast::Receiver<ProcessedTelemetry>,
-    pub websocket_sender: WebsocketInterface,
-    pub metric_concat: MetricConcat
+    pub metric_concat: MetricConcat,
+    pub websocket_sender: WebSocketServer,
+    pub flow_control: FlowControl
 }
 
 impl Server {
@@ -24,7 +26,10 @@ impl Server {
                 ProcessedTelemetry::Smoothness(m_smoothness) =>
                     self.metric_concat.smoothness_concat.append_telemetry(m_smoothness)
             }
-            
+            if self.flow_control.confirm_concat_decide_send() {
+                //todo websocket send
+                self.flow_control.confirm_message_sent()
+            }
         }
     }
 }

@@ -27,6 +27,7 @@ impl TelemetryProcessor {
             metric_observer
         }
     }
+
     pub async fn run(mut self) {
         while let Some((frame, timestamp)) = self.can_receiver.recv().await {
             if !self.message_decoders.contains_key(&frame.can_id().as_raw()) {
@@ -37,7 +38,7 @@ impl TelemetryProcessor {
             for updated_telemetry in self.metric_observer.notify_subscribers(decoded_message) {
                 match self.broadcaster.send(updated_telemetry) {
                     Ok(_) => (),
-                    Err(_) => (eprintln!("update could not be sent, continuing"))
+                    Err(_) => eprintln!("update could not be sent, continuing")
                 }
             }
         }
