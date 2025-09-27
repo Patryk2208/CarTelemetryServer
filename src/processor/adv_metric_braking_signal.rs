@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 use std::time::Instant;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
-use crate::processor::types::{Metrics, TelemetryValue};
+use crate::processor::types::{MetricID, TelemetryValue};
 
 pub struct BrakingSignal {
-    pub metrics: HashMap<Metrics, f32>,
+    pub metrics: HashMap<MetricID, f32>,
     pub timestamp: Instant
 }
 
+#[derive(Clone)]
 pub struct ProcessedBrakingSignal {
     pub g_force: f32,
     pub total_braking_time: Option<f32>,

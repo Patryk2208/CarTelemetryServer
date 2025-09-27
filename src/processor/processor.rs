@@ -4,7 +4,7 @@ use socketcan::{CanFrame, Frame};
 use tokio::sync::{broadcast, mpsc};
 use crate::processor::metric_observer::MetricObserver;
 use crate::processor::types::{TelemetryDecoder, TelemetryValue};
-use crate::can_rules::can_message_ids::{G_LAT_ID, G_LONG_ID, SPEED_ID, STEERING_ID, YAW_ID};
+use crate::can_rules::can_message_ids::{MessageID, G_LAT_ID, G_LONG_ID, SPEED_ID, STEERING_ID, YAW_ID};
 use crate::processor::decoders::{GForceLatDecoder, GForceLongDecoder, SpeedDecoder, SteeringAngleDecoder, YawRateDecoder};
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 
@@ -18,7 +18,7 @@ pub struct TelemetryProcessor {
 impl TelemetryProcessor {
     pub fn new(can_receiver: mpsc::Receiver<(CanFrame, Instant)>,
                broadcaster: broadcast::Sender<ProcessedTelemetry>,
-               message_decoders: HashMap<u32, Box<dyn TelemetryDecoder>>,
+               message_decoders: HashMap<MessageID, Box<dyn TelemetryDecoder>>,
                metric_observer: MetricObserver) -> Self {
         Self {
             can_receiver,
@@ -45,7 +45,7 @@ impl TelemetryProcessor {
 }
 
 /*
-let mut decoders: HashMap<u32, Box<dyn TelemetryDecoder>> = HashMap::new();
+let mut decoders: HashMap<MessageID, Box<dyn TelemetryDecoder>> = HashMap::new();
 decoders.insert(SPEED_ID, Box::new(SpeedDecoder));
 decoders.insert(G_LONG_ID, Box::new(GForceLongDecoder));
 decoders.insert(G_LAT_ID, Box::new(GForceLatDecoder));

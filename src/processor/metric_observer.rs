@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
-use crate::processor::types::{Metrics, TelemetryValue};
+use crate::processor::types::{MetricID, TelemetryValue};
 
 pub struct MetricObserver {
-    pub subscribers: HashMap<Metrics, Vec<Box<dyn Telemetry>>>
+    pub subscribers: HashMap<MetricID, Vec<Box<dyn Telemetry>>>
 }
 
 impl MetricObserver {
-    pub fn add_subscriber(&mut self, metric: Metrics, subscriber: Box<dyn Telemetry>) {
+    pub fn add_subscriber(&mut self, metric: MetricID, subscriber: Box<dyn Telemetry>) {
         self.subscribers
             .entry(metric)
             .or_insert_with(Vec::new)

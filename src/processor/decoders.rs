@@ -1,8 +1,7 @@
 use std::time::Instant;
 use socketcan::{CanFrame};
 use socketcan::frame::AsPtr;
-use crate::processor::processor::TelemetryProcessor;
-use crate::processor::types::{Metrics, TelemetryDecoder, TelemetryValue};
+use crate::processor::types::{TelemetryDecoder, TelemetryValue, G_LAT, G_LONG, SPEED, STEERING, YAW};
 
 pub struct SpeedDecoder;
 impl TelemetryDecoder for SpeedDecoder {
@@ -12,7 +11,7 @@ impl TelemetryDecoder for SpeedDecoder {
         let mut value = raw_value as f32;
         value *= 0.01;
         TelemetryValue {
-            metric: Metrics::Speed,
+            metric: SPEED,
             value,
             timestamp
         }
@@ -28,7 +27,7 @@ impl TelemetryDecoder for GForceLongDecoder {
         value *= 0.0009765625;
         value -= 2.0;
         TelemetryValue{
-            metric: Metrics::GForceLong,
+            metric: G_LONG,
             value,
             timestamp
         }
@@ -44,7 +43,7 @@ impl TelemetryDecoder for GForceLatDecoder {
         value *= 0.0009765625;
         value -= 2.0;
         TelemetryValue{
-            metric: Metrics::GForceLat,
+            metric: G_LAT,
             value,
             timestamp
         }
@@ -60,7 +59,7 @@ impl TelemetryDecoder for YawRateDecoder {
         value *= 0.1;
         value -= 204.7;
         TelemetryValue{
-            metric: Metrics::YawRate,
+            metric: YAW,
             value,
             timestamp
         }
@@ -75,7 +74,7 @@ impl TelemetryDecoder for SteeringAngleDecoder {
         let mut value = raw_value as f32;
         value *= 0.1;
         TelemetryValue{
-            metric: Metrics::SteeringAngle,
+            metric: STEERING,
             value,
             timestamp
         }

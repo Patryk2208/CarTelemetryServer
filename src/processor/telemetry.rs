@@ -5,6 +5,7 @@ use crate::processor::adv_metric_braking_signal::ProcessedBrakingSignal;
 use crate::processor::adv_metric_smoothness::ProcessedSmoothness;
 use crate::processor::adv_metric_gg::ProcessedGG;
 
+#[derive(Clone)]
 pub enum ProcessedTelemetry {
     GG(ProcessedGG),
     Balance(ProcessedBalance),

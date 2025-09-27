@@ -2,17 +2,15 @@ use std::time::Instant;
 use socketcan::CanFrame;
 use crate::processor::metric_observer::MetricObserver;
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
-pub enum Metrics {
-    Speed, //km/h
-    GForceLong, //G, so 9.81 m/s^2
-    GForceLat, //G, so 9.81 m/s^2
-    YawRate, //deg/s
-    SteeringAngle //deg/s
-}
+pub type MetricID = u8;
+pub const SPEED: MetricID = 0;
+pub const G_LAT: MetricID = 1;
+pub const G_LONG: MetricID = 2;
+pub const YAW: MetricID = 3;
+pub const STEERING: MetricID = 4;
 
 pub struct TelemetryValue {
-    pub metric: Metrics,
+    pub metric: MetricID,
     pub value: f32,
     pub timestamp: Instant
 }
