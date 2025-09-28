@@ -3,19 +3,25 @@ use crate::processor::adv_metric_balance::ProcessedBalance;
 use crate::processor::adv_metric_braking_signal::ProcessedBrakingSignal;
 use crate::processor::adv_metric_gg::ProcessedGG;
 use crate::processor::adv_metric_smoothness::ProcessedSmoothness;
-use crate::processor::adv_metric_steering_response::ProcessedSteeringResponse;
+use crate::processor::adv_metric_grip::ProcessedGrip;
 use crate::common::circular_buffer::CircularBuffer;
+use crate::server::websocket_interface::WebSocketMessage;
 
 pub struct MetricConcat {
     pub gg_concat: GGConcat,
     pub balance_concat: BalanceConcat,
     pub braking_signal_concat: BrakingSignalConcat,
     pub smoothness_concat: SmoothnessConcat,
-    pub steering_response_concat: SteeringResponseConcat
+    pub grip_concat: GripConcat
 }
 impl MetricConcat {
-    pub fn prepare_message(&self) {
-
+    pub fn prepare_message(&self) -> WebSocketMessage {
+        //todo
+        WebSocketMessage{
+            message_type: String::new(),
+            data: serde_json::Value::Null,
+            timestamp: 0
+        }
     }
 }
 
@@ -37,11 +43,11 @@ impl BalanceConcat {
     }
 }
 
-pub struct SteeringResponseConcat {
-    messages: CircularBuffer<ProcessedSteeringResponse>
+pub struct GripConcat {
+    messages: CircularBuffer<ProcessedGrip>
 }
-impl SteeringResponseConcat {
-    pub fn append_telemetry(&mut self, telemetry: ProcessedSteeringResponse) {
+impl GripConcat {
+    pub fn append_telemetry(&mut self, telemetry: ProcessedGrip) {
         self.messages.push(telemetry);
     }
 }

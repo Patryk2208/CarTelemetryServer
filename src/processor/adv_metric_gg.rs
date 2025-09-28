@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::time::Instant;
+use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG, SPEED};
 
 pub struct GG {
     pub metrics: HashMap<MetricID, f32>,
-    pub timestamp: Instant
+    pub timestamp: Instant,
+    history: CircularBuffer<ProcessedGG>
 }
 
 #[derive(Clone)]
@@ -24,11 +26,15 @@ impl Telemetry for GG {
         let c_g_f_lat = self.metrics.get(&G_LAT).unwrap_or(&0.0);
         let speed = self.metrics.get(&SPEED).unwrap_or(&0.0);
         
-        ProcessedTelemetry::GG(ProcessedGG{
+        let p_gg = ProcessedGG{
             current_g_force_long: c_g_f_long.clone(),
             current_g_force_lat: c_g_f_lat.clone(),
             current_speed: speed.clone(),
             timestamp: self.timestamp.clone()
-        })
+        };
+        
+        self.history.push(p_gg.clone());
+        
+        ProcessedTelemetry::GG(p_gg)
     }
 }

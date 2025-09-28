@@ -1,10 +1,10 @@
 mod types;
 mod processor;
 mod decoders;
-mod metric_observer;
+mod metric_manager;
 pub(crate) mod telemetry;
 pub(crate) mod adv_metric_balance;
-pub(crate) mod adv_metric_steering_response;
+pub(crate) mod adv_metric_grip;
 pub(crate) mod adv_metric_smoothness;
 pub(crate) mod adv_metric_braking_signal;
 pub(crate) mod adv_metric_gg;

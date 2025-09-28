@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 use crate::processor::types::{MetricID, TelemetryValue};
 
-pub struct MetricObserver {
+pub struct MetricManager {
     pub subscribers: HashMap<MetricID, Vec<Box<dyn Telemetry>>>
 }
 
-impl MetricObserver {
+impl MetricManager {
     pub fn add_subscriber(&mut self, metric: MetricID, subscriber: Box<dyn Telemetry>) {
         self.subscribers
             .entry(metric)

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::path::absolute;
 use std::time::Instant;
+use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 use crate::processor::types::{MetricID, TelemetryValue, G_LAT, SPEED, YAW};
 
@@ -10,7 +10,8 @@ const PI: f32 = std::f32::consts::PI;
 
 pub struct Balance {
     pub metrics: HashMap<MetricID, f32>,
-    pub timestamp: Instant
+    pub timestamp: Instant,
+    history: CircularBuffer<ProcessedBalance>
 }
 
 #[derive(Clone)]
@@ -31,9 +32,13 @@ impl Telemetry for Balance {
         let balance_index = (raw_yaw_rate - expected_yaw_rate)
             / (raw_yaw_rate.abs() + expected_yaw_rate.abs() + EPS);
         
-        ProcessedTelemetry::Balance(ProcessedBalance {
+        let p_b = ProcessedBalance {
             balance_index: balance_index.clone(),
             timestamp: self.timestamp.clone()
-        })
+        };
+        
+        self.history.push(p_b.clone());
+        
+        ProcessedTelemetry::Balance(p_b)
     }
 }

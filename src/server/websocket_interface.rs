@@ -1,9 +1,11 @@
 use tokio::net::TcpListener;
 use tokio_tungstenite::tungstenite::Message;
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{stream, SinkExt, StreamExt};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use serde::{Deserialize, Serialize};
+use tokio::net;
+use tokio_tungstenite::WebSocketStream;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebSocketMessage {
@@ -12,23 +14,19 @@ pub struct WebSocketMessage {
     pub timestamp: u64,
 }
 
-pub struct SimpleWebSocketServer {
+pub struct WebSocketServer {
     listener: TcpListener,
-    // Current WebSocket connection
     current_connection: Arc<Mutex<Option<WebSocketConnection>>>,
 }
 
 struct WebSocketConnection {
-    sender: futures_util::stream::SplitSink<
-        tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>,
+    sender: stream::SplitSink<
+        WebSocketStream<net::TcpStream>,
         Message
-    >,
-    receiver: futures_util::stream::SplitStream<
-        tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>
-    >,
+    >
 }
 
-impl SimpleWebSocketServer {
+impl WebSocketServer {
     pub async fn new(addr: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let listener = TcpListener::bind(addr).await?;
         println!("WebSocket server listening on {}", addr);
@@ -48,14 +46,14 @@ impl SimpleWebSocketServer {
                     let ws_stream = tokio_tungstenite::accept_async(stream).await?;
                     let (sender, receiver) = ws_stream.split();
 
-                    let connection = WebSocketConnection { sender, receiver };
+                    let connection = WebSocketConnection { sender };
 
                     {
                         let mut current = self.current_connection.lock().await;
                         *current = Some(connection);
                     }
 
-                    self.handle_connection().await;
+                    self.handle_connection(receiver).await;
 
                     println!("Client disconnected, waiting for new connection...");
                 }
@@ -67,22 +65,10 @@ impl SimpleWebSocketServer {
         }
     }
 
-    async fn handle_connection(&self) {
-        let mut receiver_task = None;
-
-        // Extract the receiver for background processing
-        {
-            let mut current = self.current_connection.lock().await;
-            if let Some(conn) = current.as_mut() {
-                let receiver = std::mem::replace(
-                    &mut conn.receiver,
-                    futures_util::stream::empty() // todo
-                );
-                receiver_task = Some(tokio::spawn(async move {
-                    Self::handle_receiver(receiver).await;
-                }));
-            }
-        }
+    async fn handle_connection(&self, receiver:  stream::SplitStream<WebSocketStream<net::TcpStream>>) {
+        let receiver_task = Some(tokio::spawn(async move {
+            Self::handle_receiver(receiver).await;
+        }));
 
         if let Some(task) = receiver_task {
             let _ = task.await;
@@ -94,11 +80,7 @@ impl SimpleWebSocketServer {
         }
     }
 
-    async fn handle_receiver(
-        mut receiver: futures_util::stream::SplitStream<
-            tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>
-        >
-    ) {
+    async fn handle_receiver(mut receiver: stream::SplitStream<WebSocketStream<net::TcpStream>>) {
         while let Some(message) = receiver.next().await {
             match message {
                 Ok(Message::Close(_)) => {

@@ -1,6 +1,6 @@
 use crate::processor::types::{TelemetryValue};
 use crate::processor::adv_metric_balance::ProcessedBalance;
-use crate::processor::adv_metric_steering_response::ProcessedSteeringResponse;
+use crate::processor::adv_metric_grip::ProcessedGrip;
 use crate::processor::adv_metric_braking_signal::ProcessedBrakingSignal;
 use crate::processor::adv_metric_smoothness::ProcessedSmoothness;
 use crate::processor::adv_metric_gg::ProcessedGG;
@@ -9,7 +9,7 @@ use crate::processor::adv_metric_gg::ProcessedGG;
 pub enum ProcessedTelemetry {
     GG(ProcessedGG),
     Balance(ProcessedBalance),
-    SteeringResponse(ProcessedSteeringResponse),
+    Grip(ProcessedGrip),
     BrakingSignal(ProcessedBrakingSignal),
     Smoothness(ProcessedSmoothness)
 }
