@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::time::Instant;
+use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 use crate::processor::types::{MetricID, TelemetryValue, G_LAT, SPEED, YAW};
@@ -10,14 +10,15 @@ const PI: f32 = std::f32::consts::PI;
 
 pub struct Balance {
     pub metrics: HashMap<MetricID, f32>,
-    pub timestamp: Instant,
-    history: CircularBuffer<ProcessedBalance>
+    pub timestamp: u64,
+    history: CircularBuffer<ProcessedBalance>,
+    new_messages_since_last_concatenation: u16
 }
 
 #[derive(Clone)]
 pub struct ProcessedBalance {
     pub balance_index: f32,
-    pub timestamp: Instant
+    pub timestamp: u64
 }
 
 impl Telemetry for Balance {
@@ -38,7 +39,35 @@ impl Telemetry for Balance {
         };
         
         self.history.push(p_b.clone());
+        self.new_messages_since_last_concatenation += 1;
         
         ProcessedTelemetry::Balance(p_b)
+    }
+
+    fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
+        let mut concat_balance_index = 0.0;
+        let mut concat_timestamp: u64 = 0;
+        let mut count = 0;
+
+        for p_b in self.history.iter_rev() {
+            concat_balance_index += p_b.balance_index;
+            concat_timestamp += p_b.timestamp;
+            count += 1;
+
+            if count > self.new_messages_since_last_concatenation {
+                break;
+            }
+        }
+
+        concat_balance_index /= count as f32;
+        concat_timestamp /= count as u64;
+
+        self.new_messages_since_last_concatenation = 0;
+
+        (String::from("balance"), json!({
+            "balance_index": concat_balance_index,
+            "timestamp": concat_timestamp
+        })
+        )
     }
 }

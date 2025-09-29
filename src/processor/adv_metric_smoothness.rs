@@ -7,14 +7,15 @@ use crate::processor::types::{MetricID, TelemetryValue};
 
 pub struct Smoothness {
     pub metrics: HashMap<MetricID, f32>,
-    pub timestamp: Instant,
-    history: CircularBuffer<ProcessedSmoothness>
+    pub timestamp: u64,
+    history: CircularBuffer<ProcessedSmoothness>,
+    new_messages_since_last_concatenation: u16
 }
 
 #[derive(Clone)]
 pub struct ProcessedSmoothness {
     pub smoothness_index: f32,
-    pub timestamp: Instant
+    pub timestamp: u64
 }
 
 
@@ -27,7 +28,12 @@ impl Telemetry for Smoothness {
         let p_s = ProcessedSmoothness {};
 
         self.history.push(p_s.clone());
+        self.new_messages_since_last_concatenation += 1;
 
         ProcessedTelemetry::Smoothness(p_s)
+    }
+
+    fn produce_concatenated_message(&self) -> (String, serde_json::Value) {
+        todo!()
     }
 }

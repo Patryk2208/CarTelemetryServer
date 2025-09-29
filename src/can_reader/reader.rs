@@ -1,10 +1,9 @@
 use socketcan;
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{mpsc};
 use std::thread;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{Result, Context};
-use socketcan::{BlockingCan, CanFrame, Socket, SocketOptions};
+use socketcan::{CanFrame, Socket, SocketOptions};
 use crate::can_reader::types::{CanReaderConfig};
 
 pub struct CanReader {
@@ -17,7 +16,7 @@ impl CanReader {
         }
     }
 
-    pub fn start(self) -> Result<mpsc::Receiver<(CanFrame, Instant)>> {
+    pub fn start(self) -> Result<mpsc::Receiver<(CanFrame, u64)>> {
         let (tx, rx) = mpsc::channel(self.config.buffer_size);
 
         let thread_builder = thread::Builder::new().name("can-reader".to_string());
@@ -31,7 +30,7 @@ impl CanReader {
         Ok(rx)
     }
 
-    fn run_can_reader(self, tx: mpsc::Sender<(CanFrame, Instant)>) -> Result<()>{
+    fn run_can_reader(self, tx: mpsc::Sender<(CanFrame, u64)>) -> Result<()>{
         let socket = socketcan::CanSocket::open(&self.config.interface)
             .with_context(|| format!("Failed to open CAN interface {}", self.config.interface))?;
         socket.set_read_timeout(self.config.read_timeout)?;
@@ -41,7 +40,7 @@ impl CanReader {
         loop {
                 match socket.read_frame() {
                     Ok(frame) => {
-                        let timestamp = Instant::now();
+                        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as u64;
                         println!("[CAN Reader] Received frame: {:?}", frame);
                         match tx.try_send((frame, timestamp)) {
                             Ok(_) => {}

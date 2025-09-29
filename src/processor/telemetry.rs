@@ -5,7 +5,6 @@ use crate::processor::adv_metric_braking_signal::ProcessedBrakingSignal;
 use crate::processor::adv_metric_smoothness::ProcessedSmoothness;
 use crate::processor::adv_metric_gg::ProcessedGG;
 
-#[derive(Clone)]
 pub enum ProcessedTelemetry {
     GG(ProcessedGG),
     Balance(ProcessedBalance),
@@ -28,5 +27,5 @@ macro_rules! update_telemetry {
 
 pub trait Telemetry {
     fn update_metric(&mut self, telemetry_value: &TelemetryValue) -> ProcessedTelemetry;
-    fn produce_concatenated_message(&self) -> String;
+    fn produce_concatenated_message(&mut self) -> (String, serde_json::Value);
 }

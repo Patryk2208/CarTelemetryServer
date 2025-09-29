@@ -1,13 +1,13 @@
 use std::collections::HashMap;
-use std::time::Instant;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 use crate::processor::types::{MetricID, TelemetryValue, G_LAT};
 
 pub struct Grip {
     pub metrics: HashMap<MetricID, f32>,
-    pub timestamp: Instant,
-    history: CircularBuffer<ProcessedGrip>
+    pub timestamp: u64,
+    history: CircularBuffer<ProcessedGrip>,
+    new_messages_since_last_concatenation: u16
 }
 
 const GRIP_CORNERING_THRESHOLD: f32 = 0.1;
@@ -17,7 +17,7 @@ pub struct ProcessedGrip {
     pub grip_force: f32,
     pub max_grip_per_corner: Option<f32>,
     pub max_grip_per_ride: f32,
-    pub timestamp: Instant
+    pub timestamp: u64
 }
 
 impl Telemetry for Grip {
@@ -54,7 +54,12 @@ impl Telemetry for Grip {
         };
         
         self.history.push(p_s_r.clone());
+        self.new_messages_since_last_concatenation += 1;
         
         ProcessedTelemetry::Grip(p_s_r)
+    }
+
+    fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
+        todo!()
     }
 }

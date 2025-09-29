@@ -7,13 +7,13 @@ use crate::processor::types::{TelemetryDecoder, TelemetryValue};
 use crate::can_rules::can_message_ids::{MessageID};
 
 pub struct TelemetryProcessor {
-    can_receiver: mpsc::Receiver<(CanFrame, Instant)>,
+    can_receiver: mpsc::Receiver<(CanFrame, u64)>,
     message_decoders: HashMap<u32, Box<dyn TelemetryDecoder>>,
     metric_manager: MetricManager
 }
 
 impl TelemetryProcessor {
-    pub fn new(can_receiver: mpsc::Receiver<(CanFrame, Instant)>,
+    pub fn new(can_receiver: mpsc::Receiver<(CanFrame, u64)>,
                message_decoders: HashMap<MessageID, Box<dyn TelemetryDecoder>>,
                metric_manager: MetricManager) -> Self {
         Self {

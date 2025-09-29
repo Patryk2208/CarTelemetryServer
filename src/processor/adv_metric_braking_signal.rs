@@ -1,13 +1,14 @@
 use std::collections::HashMap;
-use std::time::Instant;
+use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 use crate::processor::types::{MetricID, TelemetryValue, BRAKE_ON_OFF, G_LONG};
 
 pub struct BrakingSignal {
     pub metrics: HashMap<MetricID, f32>,
-    pub timestamp: Instant,
-    history: CircularBuffer<ProcessedBrakingSignal>
+    pub timestamp: u64,
+    history: CircularBuffer<ProcessedBrakingSignal>,
+    new_messages_since_last_concatenation: u16
 }
 
 #[derive(Clone)]
@@ -15,7 +16,7 @@ pub struct ProcessedBrakingSignal {
     pub g_force: f32,
     pub total_braking_time: Option<f32>,
     pub peak_brake_force: Option<f32>,
-    pub timestamp: Instant
+    pub timestamp: u64
 }
 
 impl Telemetry for BrakingSignal {
@@ -24,7 +25,7 @@ impl Telemetry for BrakingSignal {
 
         let is_braking = self.metrics.get(&BRAKE_ON_OFF).unwrap_or(&0.0).eq(&1.0);
         let g_force = if is_braking { self.metrics.get(&G_LONG).unwrap_or(&0.0) } else { &0.0 };
-        let mut total_braking_time = if is_braking { Some(0.0f32) } else { None };
+        let mut total_braking_time = if is_braking { Some(0.0) } else { None };
         let mut peak_brake_force = if is_braking { Some(g_force.clone()) } else { None };
 
         let last = self.history.peek_newest();
@@ -33,7 +34,7 @@ impl Telemetry for BrakingSignal {
             let was_braking = last.unwrap().total_braking_time.is_some();
             if is_braking {
                 if was_braking {
-                    total_braking_time = Some((telemetry_value.timestamp - last.unwrap().timestamp).as_millis() as f32);
+                    total_braking_time = Some(last.unwrap().total_braking_time.unwrap() + ((telemetry_value.timestamp - last.unwrap().timestamp) as f32));
                     peak_brake_force = Some(peak_brake_force.unwrap().max(last.unwrap().peak_brake_force.unwrap()));
                 }
             }
@@ -47,7 +48,43 @@ impl Telemetry for BrakingSignal {
         };
 
         self.history.push(p_b_s.clone());
+        self.new_messages_since_last_concatenation += 1;
 
         ProcessedTelemetry::BrakingSignal(p_b_s)
+    }
+
+    fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
+        let mut concat_g_force = 0.0;
+        let mut concat_total_braking_time = 0.0;
+        let mut concat_peak_brake_force = 0.0;
+        let mut concat_timestamp: u64 = 0;
+        let mut count = 0;
+
+        for p_b_s in self.history.iter_rev() {
+            concat_g_force += p_b_s.g_force;
+            concat_total_braking_time += p_b_s.total_braking_time.unwrap_or(0.0);
+            concat_peak_brake_force += p_b_s.peak_brake_force.unwrap_or(0.0);
+            concat_timestamp += p_b_s.timestamp;
+            count += 1;
+
+            if count > self.new_messages_since_last_concatenation {
+                break;
+            }
+        }
+
+        concat_g_force /= count as f32;
+        concat_total_braking_time /= count as f32;
+        concat_peak_brake_force /= count as f32;
+        concat_timestamp /= count as u64;
+
+        self.new_messages_since_last_concatenation = 0;
+
+        (String::from("braking_signal"), json!({
+            "g_force": concat_g_force,
+            "total_braking_time": concat_total_braking_time,
+            "peak_brake_force": concat_peak_brake_force,
+            "timestamp": concat_timestamp
+        })
+        )
     }
 }

@@ -12,9 +12,9 @@ pub const BRAKE_ON_OFF: MetricID = 5;
 pub struct TelemetryValue {
     pub metric: MetricID,
     pub value: f32,
-    pub timestamp: Instant
+    pub timestamp: u64
 }
 
 pub(crate) trait TelemetryDecoder {
-    fn decode_frame(&self, frame: CanFrame, timestamp: Instant) -> TelemetryValue;
+    fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue;
 }

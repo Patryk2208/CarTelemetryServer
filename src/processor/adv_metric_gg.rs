@@ -1,13 +1,14 @@
 use std::collections::HashMap;
-use std::time::Instant;
+use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG, SPEED};
 
 pub struct GG {
     pub metrics: HashMap<MetricID, f32>,
-    pub timestamp: Instant,
-    history: CircularBuffer<ProcessedGG>
+    pub timestamp: u64,
+    history: CircularBuffer<ProcessedGG>,
+    new_messages_since_last_concatenation: u16
 }
 
 #[derive(Clone)]
@@ -15,7 +16,7 @@ pub struct ProcessedGG {
     pub g_force_long: f32,
     pub g_force_lat: f32,
     pub speed: f32,
-    pub timestamp: Instant
+    pub timestamp: u64
 }
 
 impl Telemetry for GG {
@@ -34,7 +35,43 @@ impl Telemetry for GG {
         };
         
         self.history.push(p_gg.clone());
+        self.new_messages_since_last_concatenation += 1;
         
         ProcessedTelemetry::GG(p_gg)
+    }
+
+    fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
+        let mut concat_g_force_long = 0.0;
+        let mut concat_g_force_lat = 0.0;
+        let mut concat_speed = 0.0;
+        let mut concat_timestamp: u64 = 0;
+        let mut count = 0;
+
+        for p_gg in self.history.iter_rev() {
+            concat_g_force_long += p_gg.g_force_long;
+            concat_g_force_lat += p_gg.g_force_lat;
+            concat_speed += p_gg.speed;
+            concat_timestamp += p_gg.timestamp;
+            count += 1;
+
+            if count > self.new_messages_since_last_concatenation {
+                break;
+            }
+        }
+
+        concat_g_force_long /= count as f32;
+        concat_g_force_lat /= count as f32;
+        concat_speed /= count as f32;
+        concat_timestamp /= count as u64;
+
+        self.new_messages_since_last_concatenation = 0;
+
+        (String::from("gg"), json!({
+            "g_force_long": concat_g_force_long,
+            "g_force_lat": concat_g_force_lat,
+            "speed": concat_speed,
+            "timestamp": concat_timestamp
+        })
+        )
     }
 }
