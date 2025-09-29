@@ -14,14 +14,16 @@ impl MetricManager {
             .push(subscriber);
     }
 
-    pub fn notify_subscribers(&mut self, metric_value: TelemetryValue) -> impl Iterator<Item = ProcessedTelemetry> {
-        let subscribers = self.subscribers
-            .get_mut(&metric_value.metric)
-            .into_iter()
-            .flatten();
+    pub fn notify_subscribers(&mut self, metric_value: TelemetryValue) {
+        if let Some(subscribers) = self.subscribers.get_mut(&metric_value.metric) {
+            for sub in subscribers.iter_mut() {
+                sub.update_metric(&metric_value);
+            }
+        }
+    }
 
-        subscribers.map(move |subscriber| {
-            return subscriber.update_metric(&metric_value);
-        })
+    pub fn get_message(&self) -> String {
+        //todo generate message since last update
+        return String::new();
     }
 }

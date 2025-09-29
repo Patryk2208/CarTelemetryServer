@@ -12,9 +12,9 @@ pub struct GG {
 
 #[derive(Clone)]
 pub struct ProcessedGG {
-    pub current_g_force_long: f32,
-    pub current_g_force_lat: f32,
-    pub current_speed: f32,
+    pub g_force_long: f32,
+    pub g_force_lat: f32,
+    pub speed: f32,
     pub timestamp: Instant
 }
 
@@ -27,9 +27,9 @@ impl Telemetry for GG {
         let speed = self.metrics.get(&SPEED).unwrap_or(&0.0);
         
         let p_gg = ProcessedGG{
-            current_g_force_long: c_g_f_long.clone(),
-            current_g_force_lat: c_g_f_lat.clone(),
-            current_speed: speed.clone(),
+            g_force_long: c_g_f_long.clone(),
+            g_force_lat: c_g_f_lat.clone(),
+            speed: speed.clone(),
             timestamp: self.timestamp.clone()
         };
         

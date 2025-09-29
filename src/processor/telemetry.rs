@@ -28,4 +28,5 @@ macro_rules! update_telemetry {
 
 pub trait Telemetry {
     fn update_metric(&mut self, telemetry_value: &TelemetryValue) -> ProcessedTelemetry;
+    fn produce_concatenated_message(&self) -> String;
 }

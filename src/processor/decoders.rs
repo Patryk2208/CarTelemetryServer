@@ -1,9 +1,7 @@
 use std::time::Instant;
 use socketcan::{CanFrame};
 use socketcan::frame::AsPtr;
-use crate::processor::types::{TelemetryDecoder, TelemetryValue, G_LAT, G_LONG, SPEED, STEERING, YAW};
-
-//todo add brake on/off decoder
+use crate::processor::types::{TelemetryDecoder, TelemetryValue, BRAKE_ON_OFF, G_LAT, G_LONG, SPEED, STEERING, YAW};
 
 pub struct SpeedDecoder;
 impl TelemetryDecoder for SpeedDecoder {
@@ -77,6 +75,22 @@ impl TelemetryDecoder for SteeringAngleDecoder {
         value *= 0.1;
         TelemetryValue{
             metric: STEERING,
+            value,
+            timestamp
+        }
+    }
+}
+
+pub struct BrakeOnOffDecoder;
+impl TelemetryDecoder for BrakeOnOffDecoder {
+    fn decode_frame(&self, frame: CanFrame, timestamp: Instant) -> TelemetryValue {
+        let bytes = frame.as_bytes();
+        let mut raw_value = i8::from_le_bytes([bytes[6]]);
+        raw_value >>= 6;
+        raw_value &= 1;
+        let value = raw_value as f32;
+        TelemetryValue {
+            metric: BRAKE_ON_OFF,
             value,
             timestamp
         }
