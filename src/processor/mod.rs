@@ -1,5 +1,5 @@
 mod types;
-mod processor;
+pub mod processor;
 mod decoders;
 pub(crate) mod metric_manager;
 pub(crate) mod telemetry;
