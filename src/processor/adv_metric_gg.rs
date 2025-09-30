@@ -20,7 +20,7 @@ pub struct ProcessedGG {
 }
 
 impl Telemetry for GG {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) -> ProcessedTelemetry {
+    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
         crate::update_telemetry!(self, telemetry_value);
 
         let c_g_f_long = self.metrics.get(&G_LONG).unwrap_or(&0.0);
@@ -34,10 +34,8 @@ impl Telemetry for GG {
             timestamp: self.timestamp.clone()
         };
         
-        self.history.push(p_gg.clone());
+        self.history.push(p_gg);
         self.new_messages_since_last_concatenation += 1;
-        
-        ProcessedTelemetry::GG(p_gg)
     }
 
     fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
@@ -73,5 +71,9 @@ impl Telemetry for GG {
             "timestamp": concat_timestamp
         })
         )
+    }
+
+    fn get_type(&self) -> String {
+        String::from("gg")
     }
 }

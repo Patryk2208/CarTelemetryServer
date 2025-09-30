@@ -20,7 +20,7 @@ pub struct ProcessedBrakingSignal {
 }
 
 impl Telemetry for BrakingSignal {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) -> ProcessedTelemetry {
+    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
         crate::update_telemetry!(self, telemetry_value);
 
         let is_braking = self.metrics.get(&BRAKE_ON_OFF).unwrap_or(&0.0).eq(&1.0);
@@ -47,10 +47,8 @@ impl Telemetry for BrakingSignal {
             timestamp: telemetry_value.timestamp.clone()
         };
 
-        self.history.push(p_b_s.clone());
+        self.history.push(p_b_s);
         self.new_messages_since_last_concatenation += 1;
-
-        ProcessedTelemetry::BrakingSignal(p_b_s)
     }
 
     fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
@@ -86,5 +84,9 @@ impl Telemetry for BrakingSignal {
             "timestamp": concat_timestamp
         })
         )
+    }
+
+    fn get_type(&self) -> String {
+        String::from("braking_signal")
     }
 }

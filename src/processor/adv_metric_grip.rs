@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde::__private226::de::IdentifierDeserializer;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
 use crate::processor::types::{MetricID, TelemetryValue, G_LAT};
@@ -21,7 +22,7 @@ pub struct ProcessedGrip {
 }
 
 impl Telemetry for Grip {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) -> ProcessedTelemetry {
+    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
         crate::update_telemetry!(self, telemetry_value);
 
         let grip_force = self.metrics.get(&G_LAT).unwrap_or(&0.0);
@@ -53,13 +54,15 @@ impl Telemetry for Grip {
             timestamp: telemetry_value.timestamp.clone()
         };
         
-        self.history.push(p_s_r.clone());
+        self.history.push(p_s_r);
         self.new_messages_since_last_concatenation += 1;
-        
-        ProcessedTelemetry::Grip(p_s_r)
     }
 
     fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
         todo!()
+    }
+
+    fn get_type(&self) -> String {
+        String::from("grip")
     }
 }

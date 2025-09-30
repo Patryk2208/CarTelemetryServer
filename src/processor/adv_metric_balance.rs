@@ -22,7 +22,7 @@ pub struct ProcessedBalance {
 }
 
 impl Telemetry for Balance {
-    fn update_metric(&mut self, telemetry_value: &TelemetryValue) -> ProcessedTelemetry {
+    fn update_metric(&mut self, telemetry_value: &TelemetryValue) {
         crate::update_telemetry!(self, telemetry_value);
         
         let raw_yaw_rate = self.metrics.get(&YAW).unwrap_or(&0.0);
@@ -38,10 +38,8 @@ impl Telemetry for Balance {
             timestamp: self.timestamp.clone()
         };
         
-        self.history.push(p_b.clone());
+        self.history.push(p_b);
         self.new_messages_since_last_concatenation += 1;
-        
-        ProcessedTelemetry::Balance(p_b)
     }
 
     fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
@@ -69,5 +67,9 @@ impl Telemetry for Balance {
             "timestamp": concat_timestamp
         })
         )
+    }
+    
+    fn get_type(&self) -> String {
+        String::from("balance")
     }
 }
