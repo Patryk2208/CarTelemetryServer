@@ -46,7 +46,6 @@ impl MetricManager {
                 let (key, value) = sub.produce_concatenated_message();
                 map.insert(key, value);
             }
-            //todo insert general message info
         }
         message
     }

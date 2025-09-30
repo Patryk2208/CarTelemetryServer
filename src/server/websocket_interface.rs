@@ -2,16 +2,25 @@ use tokio::net::TcpListener;
 use tokio_tungstenite::tungstenite::Message;
 use futures_util::{stream, SinkExt, StreamExt};
 use std::sync::Arc;
+use std::time::SystemTime;
+use serde_json::json;
 use tokio::sync::Mutex;
-use serde::{Deserialize, Serialize};
 use tokio::net;
 use tokio_tungstenite::WebSocketStream;
+use tungstenite::Utf8Bytes;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WebSocketMessage {
-    pub message_type: String,
-    pub data: serde_json::Value,
-    pub timestamp: u64,
+fn prepare_telemetry_message(telemetry: serde_json::Value) -> Message {
+    let time;
+    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(n) => time = n.as_millis() as u64,
+        Err(_) => time = 0
+    }
+    let message = json!({
+            "type": "Telemetry",
+            "data": telemetry,
+            "timestamp": time
+        });
+    Message::Text(Utf8Bytes::from(message.to_string()))
 }
 
 pub struct WebSocketServer {
@@ -103,14 +112,12 @@ impl WebSocketServer {
         }
     }
 
-    pub async fn send_telemetry(&self, telemetry: &WebSocketMessage) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn send_telemetry(&self, telemetry: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
         let mut current = self.current_connection.lock().await;
 
         if let Some(connection) = current.as_mut() {
-            let json = serde_json::to_string(telemetry)?;
-            let message = Message::from(json);
-
-            match connection.sender.send(message).await {
+            
+            match connection.sender.send(prepare_telemetry_message(telemetry)).await {
                 Ok(()) => Ok(()),
                 Err(e) => {
                     println!("Send failed: {}, closing connection", e);
