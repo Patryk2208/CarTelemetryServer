@@ -1,1 +1,2 @@
-pub mod reader;
+mod reader;
+pub mod factory;

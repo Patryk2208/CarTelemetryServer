@@ -30,10 +30,20 @@ impl MetricManager {
     }
 
     //called by telemetry processor
-    pub fn notify_subscribers(&mut self, metric_value: TelemetryValue) {
-        if let Some(subscribers) = self.subscriptions.get_mut(&metric_value.metric) {
+    pub fn notify_subscribers(&mut self, metric_values: Vec<TelemetryValue>) {
+        /*if let Some(subscribers) = self.subscriptions.get_mut(&metric_value.metric) {
             for sub_index in subscribers.iter() {
                 self.subscribers[sub_index.clone()].update_metric(&metric_value);
+            }
+        }
+*/
+        for metric_value in metric_values {
+            if let Some(subscribers) = self.subscriptions.get_mut(&metric_value.metric) {
+                for &sub_index in subscribers.iter() {
+                    if let Some(subscriber) = self.subscribers.get_mut(sub_index) {
+                        subscriber.update_metric(&metric_value);
+                    }
+                }
             }
         }
     }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::common::circular_buffer::CircularBuffer;
-use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
-use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG};
+use crate::processor::telemetry::Telemetry;
+use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG, SPEED, YAW};
 
 const SMOOTHNESS_ALPHA: f32 = 0.2;
 
@@ -22,6 +22,18 @@ pub struct ProcessedSmoothness {
     dv_dt_g_lat: f32,
 }
 
+impl Smoothness {
+    pub fn new(history_size: usize) -> Self {
+        let mut metrics = HashMap::new();
+        metrics.insert(G_LONG, 0.0);
+        metrics.insert(G_LAT, 0.0);
+        Self {
+            metrics,
+            timestamp: 0,
+            history: CircularBuffer::new(history_size),
+            new_messages_since_last_concatenation: 0
+        }
+    }}
 
 impl Telemetry for Smoothness {
     fn update_metric(&mut self, telemetry_value: &TelemetryValue) {

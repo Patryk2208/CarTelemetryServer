@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
-use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
-use crate::processor::types::{MetricID, TelemetryValue, BRAKE_ON_OFF, G_LONG};
+use crate::processor::telemetry::Telemetry;
+use crate::processor::types::{MetricID, TelemetryValue, BRAKE_ON_OFF, G_LAT, G_LONG, SPEED, YAW};
 
 pub struct BrakingSignal {
     pub metrics: HashMap<MetricID, f32>,
@@ -17,6 +17,20 @@ pub struct ProcessedBrakingSignal {
     pub total_braking_time: Option<f32>,
     pub peak_brake_force: Option<f32>,
     pub timestamp: u64
+}
+
+impl BrakingSignal {
+    pub fn new(history_size: usize) -> Self {
+        let mut metrics = HashMap::new();
+        metrics.insert(G_LONG, 0.0);
+        metrics.insert(BRAKE_ON_OFF, 0.0);
+        Self {
+            metrics,
+            timestamp: 0,
+            history: CircularBuffer::new(history_size),
+            new_messages_since_last_concatenation: 0
+        }
+    }
 }
 
 impl Telemetry for BrakingSignal {

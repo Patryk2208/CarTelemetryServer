@@ -1,6 +1,10 @@
 use socketcan::{CanFrame};
 use socketcan::frame::AsPtr;
-use crate::processor::types::{TelemetryDecoder, TelemetryValue, BRAKE_ON_OFF, G_LAT, G_LONG, SPEED, STEERING, YAW};
+use crate::processor::types::{TelemetryValue, BRAKE_ON_OFF, G_LAT, G_LONG, SPEED, STEERING, YAW};
+
+pub trait TelemetryDecoder {
+    fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue;
+}
 
 pub struct SpeedDecoder;
 impl TelemetryDecoder for SpeedDecoder {

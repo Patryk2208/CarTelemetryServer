@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
-use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
-use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG, SPEED};
+use crate::processor::telemetry::Telemetry;
+use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG, SPEED, YAW};
 
 pub struct GG {
     pub metrics: HashMap<MetricID, f32>,
@@ -18,6 +18,20 @@ pub struct ProcessedGG {
     pub speed: f32,
     pub timestamp: u64
 }
+
+impl GG {
+    pub fn new(history_size: usize) -> Self {
+        let mut metrics = HashMap::new();
+        metrics.insert(G_LONG, 0.0);
+        metrics.insert(G_LAT, 0.0);
+        metrics.insert(SPEED, 0.0);
+        Self {
+            metrics,
+            timestamp: 0,
+            history: CircularBuffer::new(history_size),
+            new_messages_since_last_concatenation: 0
+        }
+    }}
 
 impl Telemetry for GG {
     fn update_metric(&mut self, telemetry_value: &TelemetryValue) {

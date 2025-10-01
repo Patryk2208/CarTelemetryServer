@@ -33,6 +33,13 @@ pub struct FlowControl {
 }
 
 impl FlowControl {
+    pub fn new() -> Self {
+        Self {
+            iteration_start: Instant::now(),
+            send_duration: Duration::from_nanos(0),
+            refresh_rate: RefreshRate { rate: RefreshRate::FAST }
+        }
+    }
     pub fn start_iteration(&mut self) {
         self.iteration_start = Instant::now();
     }

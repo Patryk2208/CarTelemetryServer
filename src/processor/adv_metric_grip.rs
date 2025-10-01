@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use serde::__private226::de::IdentifierDeserializer;
 use crate::common::circular_buffer::CircularBuffer;
-use crate::processor::telemetry::{ProcessedTelemetry, Telemetry};
-use crate::processor::types::{MetricID, TelemetryValue, G_LAT};
+use crate::processor::telemetry::Telemetry;
+use crate::processor::types::{MetricID, TelemetryValue, G_LAT, SPEED, YAW};
 
 pub struct Grip {
     pub metrics: HashMap<MetricID, f32>,
@@ -20,6 +20,18 @@ pub struct ProcessedGrip {
     pub max_grip_per_ride: f32,
     pub timestamp: u64
 }
+
+impl Grip {
+    pub fn new(history_size: usize) -> Self {
+        let mut metrics = HashMap::new();
+        metrics.insert(G_LAT, 0.0);
+        Self {
+            metrics,
+            timestamp: 0,
+            history: CircularBuffer::new(history_size),
+            new_messages_since_last_concatenation: 0
+        }
+    }}
 
 impl Telemetry for Grip {
     fn update_metric(&mut self, telemetry_value: &TelemetryValue) {

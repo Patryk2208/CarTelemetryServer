@@ -14,7 +14,3 @@ pub struct TelemetryValue {
     pub value: f32,
     pub timestamp: u64
 }
-
-pub(crate) trait TelemetryDecoder {
-    fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue;
-}

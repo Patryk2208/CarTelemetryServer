@@ -5,7 +5,7 @@ use crate::server::flow_control::FlowControl;
 use crate::server::websocket_interface::WebSocketServer;
 
 pub struct Server {
-    pub websocket_sender: WebSocketServer,
+    pub websocket_server: WebSocketServer,
     pub metric_manager: Arc<Mutex<MetricManager>>,
     pub flow_control: FlowControl
 }
@@ -19,7 +19,7 @@ impl Server {
                 let mut manager = self.metric_manager.lock().await;
                 message = manager.get_message();
             }
-            self.websocket_sender.send_telemetry(message).await.unwrap();
+            self.websocket_server.send_telemetry(message).await.unwrap();
             self.flow_control.complete_iteration();
         }
     }
