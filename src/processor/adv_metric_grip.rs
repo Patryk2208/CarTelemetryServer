@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-use serde::__private226::de::IdentifierDeserializer;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::Telemetry;
-use crate::processor::types::{MetricID, TelemetryValue, G_LAT, SPEED, YAW};
+use crate::processor::types::{MetricID, TelemetryValue, G_LAT};
 
 pub struct Grip {
     pub metrics: HashMap<MetricID, f32>,

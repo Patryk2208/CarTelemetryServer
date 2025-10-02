@@ -8,18 +8,15 @@ use crate::server::websocket_interface::WebSocketServer;
 pub async fn create_server(
     address: &str,
     metric_manager: Arc<Mutex<MetricManager>>
-) -> Server {
-    let websocket_server: WebSocketServer;
-    match WebSocketServer::new(address).await {
-        Ok(s) => websocket_server = s,
-        Err(e) => panic!("Failed to create websocket server: {}", e)
-    }
+) -> Result<Server, String> {
+    let websocket_server = WebSocketServer::new(address).await
+        .map_err(|e| format!("Failed to create websocket server: {}", e))?;
     
     let flow_control = FlowControl::new();
     
-    Server {
+    Ok(Server {
         websocket_server,
         metric_manager,
         flow_control
-    }
+    })
 }

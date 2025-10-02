@@ -1,5 +1,3 @@
-use std::time::Instant;
-use socketcan::CanFrame;
 
 pub type MetricID = u8;
 pub const SPEED: MetricID = 0;

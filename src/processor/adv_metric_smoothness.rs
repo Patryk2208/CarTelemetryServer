@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::Telemetry;
-use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG, SPEED, YAW};
+use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG};
 
 const SMOOTHNESS_ALPHA: f32 = 0.2;
 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::Telemetry;
-use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG, SPEED, YAW};
+use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG, SPEED};
 
 pub struct GG {
     pub metrics: HashMap<MetricID, f32>,

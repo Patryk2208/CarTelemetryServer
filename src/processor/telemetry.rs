@@ -12,7 +12,7 @@ macro_rules! update_telemetry {
     };
 }
 
-pub trait Telemetry {
+pub trait Telemetry: Send{
     fn update_metric(&mut self, telemetry_value: &TelemetryValue);
     fn produce_concatenated_message(&mut self) -> (String, serde_json::Value);
     fn get_type(&self) -> String;

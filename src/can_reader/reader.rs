@@ -1,6 +1,7 @@
 use socketcan;
 use tokio::sync::{mpsc};
 use std::thread;
+use std::thread::JoinHandle;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{Result, Context};
 use socketcan::{CanFilter, CanFrame, Socket, SocketOptions};
@@ -14,15 +15,12 @@ pub struct CanReader {
 }
 impl CanReader {
 
-    pub fn start(self) -> Result<()> {
-        let thread_builder = thread::Builder::new().name("can-reader".to_string());
-
-        thread_builder.spawn(move || {
+    pub fn start(self) -> JoinHandle<()> {
+        thread::spawn(move || {
             if let Err(e) = self.run_can_reader() {
                 eprintln!("CAN reader thread error: {}", e);
             }
-        })?;
-        Ok(())
+        })
     }
 
     fn run_can_reader(self) -> Result<()>{
