@@ -48,10 +48,10 @@ impl FlowControl {
         self.send_duration = self.iteration_start.elapsed();
         if self.send_duration >= self.refresh_rate.rate {
             self.refresh_rate.slow_down();
+            return;
         } else if self.send_duration < self.refresh_rate.rate / 2 {
             self.refresh_rate.speed_up();
-        } else {
-            sleep(self.refresh_rate.rate - self.send_duration);
         }
+        sleep(self.refresh_rate.rate - self.send_duration);
     }
 }

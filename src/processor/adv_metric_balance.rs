@@ -70,6 +70,13 @@ impl Telemetry for Balance {
                 break;
             }
         }
+        
+        if count == 0 {
+            return (self.get_type(), json!({
+                "balance_index": 0.0,
+                "timestamp": 0
+            }));
+        }
 
         concat_balance_index /= count as f32;
         concat_timestamp /= count as u64;

@@ -84,6 +84,13 @@ impl Telemetry for Smoothness {
                 break;
             }
         }
+        
+        if count == 0 {
+            return (self.get_type(), json!({
+                "smoothness_index": 0.0,
+                "timestamp": 0
+            }));
+        }
 
         concat_smoothness_index /= count as f32;
         concat_timestamp /= count as u64;

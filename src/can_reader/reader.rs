@@ -39,7 +39,7 @@ impl CanReader {
                         Err(_) => continue
                     }
 
-                    println!("[CAN Reader] Received frame: {:?}", frame);
+                    //println!("[CAN Reader] Received frame: {:?}", frame);
 
                     match self.frame_sender.try_send((frame, timestamp)) {
                         Ok(_) => {}
@@ -54,7 +54,7 @@ impl CanReader {
                 }
                 Err(e) => {
                     eprintln!("CAN reader error: {}", e);
-                    thread::sleep(Duration::from_millis(100));
+                    thread::sleep(Duration::from_millis(500));
                 }
             }
         }

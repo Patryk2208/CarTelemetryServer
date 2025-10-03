@@ -61,14 +61,13 @@ class TelemetryTester {
                 this.avgLatency = (this.avgLatency * (this.messageCount - 1) + latency) / this.messageCount;
             }
 
-            if (this.messageCount % 200 === 0) {
+            if (this.messageCount % (60 * 3) === 0) {
                 this.printCurrentStats();
             }
 
-            if (this.messageCount % 10000 === 1) {
-                console.log('Sample message:', {
-                    message
-                });
+            if (this.messageCount % 1200 === 1) {
+                console.log('Sample message:');
+                console.log(JSON.stringify(message, null, 2));
             }
 
         } catch (err) {
@@ -101,6 +100,6 @@ const tester = new TelemetryTester();
 tester.connect('ws://localhost:8080');
 
 setTimeout(() => {
-    console.log('Test completed after 30 seconds');
+    console.log('Test completed after 60 seconds');
     process.exit(0);
-}, 30000);
+}, 60000);

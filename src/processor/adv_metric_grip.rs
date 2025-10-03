@@ -89,6 +89,15 @@ impl Telemetry for Grip {
             }
         }
 
+        if count == 0 {
+            return (self.get_type(), json!({
+                "grip_force": 0.0,
+                "max_grip_per_corner": 0.0,
+                "max_grip_per_ride": 0.0,
+                "timestamp": 0
+            }));
+        }
+
         concat_grip_force /= count as f32;
         concat_max_grip_per_corner /= count as f32;
         concat_max_grip_per_ride /= count as f32;

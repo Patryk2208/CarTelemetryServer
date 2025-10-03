@@ -83,6 +83,15 @@ impl Telemetry for BrakingSignal {
                 break;
             }
         }
+        
+        if count == 0 {
+            return (self.get_type(), json!({
+                "g_force": 0.0,
+                "total_braking_time": 0.0,
+                "peak_brake_force": 0.0,
+                "timestamp": 0
+            }));
+        }
 
         concat_g_force /= count as f32;
         concat_total_braking_time /= count as f32;

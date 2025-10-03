@@ -5,6 +5,7 @@ use serde_json::json;
 use tokio::net;
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
+use tokio::time::Instant;
 use tokio_tungstenite::WebSocketStream;
 use tungstenite::{Message, Utf8Bytes};
 use crate::processor::metric_manager::MetricManager;
@@ -55,7 +56,9 @@ impl Server {
                         *current = Some(connection);
                     }
 
+                    let time = Instant::now();
                     self.transfer_metrics().await;
+                    println!("Metrics transfer time: {:?}", time.elapsed());
 
                     println!("Client disconnected, waiting for new connection...");
                 }
@@ -74,7 +77,10 @@ impl Server {
                 let mut manager = self.metric_sender.metric_manager.lock().await;
                 message = manager.get_message();
             }
-            self.send_telemetry(message).await.unwrap();
+            match self.send_telemetry(message).await {
+                Ok(_) => {},
+                Err(_) => {}
+            }
             self.metric_sender.flow_control.complete_iteration();
         }
     }

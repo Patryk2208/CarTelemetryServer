@@ -71,6 +71,15 @@ impl Telemetry for GG {
             }
         }
 
+        if count == 0 {
+            return (self.get_type(), json!({
+                "g_force_long": 0.0,
+                "g_force_lat": 0.0,
+                "speed": 0.0,
+                "timestamp": 0
+            }));
+        }
+
         concat_g_force_long /= count as f32;
         concat_g_force_lat /= count as f32;
         concat_speed /= count as f32;

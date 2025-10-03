@@ -13,6 +13,7 @@ impl TelemetryDecoder for SpeedDecoder {
         let raw_value = u16::from_be_bytes([bytes[4], bytes[5]]);
         let mut value = raw_value as f32;
         value *= 0.01;
+        println!("decoded speed = {:?}", value);
         TelemetryValue {
             metric: SPEED,
             value,
