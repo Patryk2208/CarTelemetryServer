@@ -78,7 +78,7 @@ impl Telemetry for GG {
 
         self.new_messages_since_last_concatenation = 0;
 
-        (String::from("gg"), json!({
+        (self.get_type(), json!({
             "g_force_long": concat_g_force_long,
             "g_force_lat": concat_g_force_lat,
             "speed": concat_speed,

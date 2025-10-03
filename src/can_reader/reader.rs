@@ -9,7 +9,6 @@ use socketcan::{CanFilter, CanFrame, Socket, SocketOptions};
 pub struct CanReader {
     pub interface: String,
     pub message_filter: Vec<CanFilter>,
-    pub buffer_size: usize,
     pub read_timeout: Duration,
     pub frame_sender: mpsc::Sender<(CanFrame, u64)>
 }

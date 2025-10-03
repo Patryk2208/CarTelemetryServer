@@ -14,7 +14,6 @@ pub fn create_can_reader(interface: &str, tx: Sender<(CanFrame, u64)>) -> CanRea
     CanReader {
         interface: String::from(interface),
         message_filter: filters,
-        buffer_size: 100,
         read_timeout: std::time::Duration::from_millis(100),
         frame_sender: tx
     }

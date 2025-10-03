@@ -38,8 +38,13 @@ fn main() {
     });
     let server_handle = async_runtime.spawn(async move {
         match server.await {
-            Ok(mut server) => server.run().await,
-            Err(err) => {}
+            Ok(mut server) => {
+                match server.run().await {
+                    Ok(_) => {},
+                    Err(_) => {}
+                }
+            },
+            Err(_) => {}
         }
     });
     let reader_handle = reader.start();

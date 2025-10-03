@@ -76,7 +76,7 @@ impl Telemetry for Balance {
 
         self.new_messages_since_last_concatenation = 0;
 
-        (String::from("balance"), json!({
+        (self.get_type(), json!({
             "balance_index": concat_balance_index,
             "timestamp": concat_timestamp
         })

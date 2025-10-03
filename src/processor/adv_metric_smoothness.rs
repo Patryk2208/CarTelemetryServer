@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
 use crate::processor::telemetry::Telemetry;
 use crate::processor::types::{MetricID, TelemetryValue, G_LAT, G_LONG};
@@ -70,7 +71,30 @@ impl Telemetry for Smoothness {
     }
 
     fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
-        todo!()
+        let mut concat_smoothness_index = 0.0;
+        let mut concat_timestamp: u64 = 0;
+        let mut count = 0;
+
+        for p_s in self.history.iter_rev() {
+            concat_smoothness_index += p_s.smoothness_index;
+            concat_timestamp += p_s.timestamp;
+            count += 1;
+
+            if count > self.new_messages_since_last_concatenation {
+                break;
+            }
+        }
+
+        concat_smoothness_index /= count as f32;
+        concat_timestamp /= count as u64;
+
+        self.new_messages_since_last_concatenation = 0;
+
+        (self.get_type(), json!({
+            "smoothness_index": concat_smoothness_index,
+            "timestamp": concat_timestamp
+        })
+        )
     }
 
     fn get_type(&self) -> String {

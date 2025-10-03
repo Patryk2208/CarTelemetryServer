@@ -8,7 +8,7 @@ pub struct MetricManager {
 }
 
 impl MetricManager {
-    pub fn add_subscriber(&mut self, metric: MetricID, subscriber: Box<dyn Telemetry>) -> bool {
+    /*pub fn add_subscriber(&mut self, metric: MetricID, subscriber: Box<dyn Telemetry>) -> bool {
         let subscriber_id = subscriber.get_type();
 
         if let Some(existing_index) = self.subscribers.iter().position(|sub| sub.get_type() == subscriber_id) {
@@ -27,7 +27,7 @@ impl MetricManager {
                 .push(subscriber_index);
             true
         }
-    }
+    }*/
 
     //called by telemetry processor
     pub fn notify_subscribers(&mut self, metric_values: Vec<TelemetryValue>) {
@@ -35,8 +35,8 @@ impl MetricManager {
             for sub_index in subscribers.iter() {
                 self.subscribers[sub_index.clone()].update_metric(&metric_value);
             }
-        }
-*/
+        }*/
+        
         for metric_value in metric_values {
             if let Some(subscribers) = self.subscriptions.get_mut(&metric_value.metric) {
                 for &sub_index in subscribers.iter() {

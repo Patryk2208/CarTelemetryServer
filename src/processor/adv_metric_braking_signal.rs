@@ -74,8 +74,8 @@ impl Telemetry for BrakingSignal {
 
         for p_b_s in self.history.iter_rev() {
             concat_g_force += p_b_s.g_force;
-            concat_total_braking_time += p_b_s.total_braking_time.unwrap_or(0.0);
-            concat_peak_brake_force += p_b_s.peak_brake_force.unwrap_or(0.0);
+            concat_total_braking_time += p_b_s.total_braking_time.unwrap_or(0.0); //todo
+            concat_peak_brake_force += p_b_s.peak_brake_force.unwrap_or(0.0); //todo
             concat_timestamp += p_b_s.timestamp;
             count += 1;
 
@@ -91,7 +91,7 @@ impl Telemetry for BrakingSignal {
 
         self.new_messages_since_last_concatenation = 0;
 
-        (String::from("braking_signal"), json!({
+        (self.get_type(), json!({
             "g_force": concat_g_force,
             "total_braking_time": concat_total_braking_time,
             "peak_brake_force": concat_peak_brake_force,
