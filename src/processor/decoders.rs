@@ -9,11 +9,11 @@ pub trait TelemetryDecoder: Send {
 pub struct SpeedDecoder;
 impl TelemetryDecoder for SpeedDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue {
-        let bytes = frame.as_bytes();
-        let raw_value = u16::from_be_bytes([bytes[4], bytes[5]]);
+        let raw_bytes = frame.as_bytes().split_at(8);
+        let value_bytes = raw_bytes.1;
+        let raw_value = u16::from_be_bytes([value_bytes[4], value_bytes[5]]);
         let mut value = raw_value as f32;
         value *= 0.01;
-        println!("decoded speed = {:?}", value);
         TelemetryValue {
             metric: SPEED,
             value,
@@ -25,8 +25,9 @@ impl TelemetryDecoder for SpeedDecoder {
 pub struct GForceLongDecoder;
 impl TelemetryDecoder for GForceLongDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue {
-        let bytes = frame.as_bytes();
-        let raw_value = u16::from_be_bytes([bytes[0], bytes[1]]);
+        let bytes = frame.as_bytes().split_at(8);
+        let value_bytes = bytes.1;
+        let raw_value = u16::from_be_bytes([value_bytes[0], value_bytes[1]]);
         let mut value = (raw_value >> 4) as f32;
         value *= 0.0009765625;
         value -= 2.0;
@@ -41,8 +42,9 @@ impl TelemetryDecoder for GForceLongDecoder {
 pub struct GForceLatDecoder;
 impl TelemetryDecoder for GForceLatDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue {
-        let bytes = frame.as_bytes();
-        let raw_value = u16::from_be_bytes([bytes[1], bytes[2]]);
+        let bytes = frame.as_bytes().split_at(8);
+        let value_bytes = bytes.1;
+        let raw_value = u16::from_be_bytes([value_bytes[1], value_bytes[2]]);
         let mut value = (raw_value << 4) as f32;
         value *= 0.0009765625;
         value -= 2.0;
@@ -57,8 +59,9 @@ impl TelemetryDecoder for GForceLatDecoder {
 pub struct YawRateDecoder;
 impl TelemetryDecoder for YawRateDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue {
-        let bytes = frame.as_bytes();
-        let raw_value = u16::from_be_bytes([bytes[3], bytes[4]]);
+        let bytes = frame.as_bytes().split_at(8);
+        let value_bytes = bytes.1;
+        let raw_value = u16::from_be_bytes([value_bytes[3], value_bytes[4]]);
         let mut value = (raw_value >> 4) as f32;
         value *= 0.1;
         value -= 204.7;
@@ -73,8 +76,9 @@ impl TelemetryDecoder for YawRateDecoder {
 pub struct SteeringAngleDecoder;
 impl TelemetryDecoder for SteeringAngleDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue {
-        let bytes = frame.as_bytes();
-        let raw_value = i16::from_le_bytes([bytes[0], bytes[1]]);
+        let bytes = frame.as_bytes().split_at(8);
+        let value_bytes = bytes.1;
+        let raw_value = i16::from_le_bytes([value_bytes[0], value_bytes[1]]);
         let mut value = raw_value as f32;
         value *= 0.1;
         TelemetryValue{
@@ -88,8 +92,9 @@ impl TelemetryDecoder for SteeringAngleDecoder {
 pub struct BrakeOnOffDecoder;
 impl TelemetryDecoder for BrakeOnOffDecoder {
     fn decode_frame(&self, frame: CanFrame, timestamp: u64) -> TelemetryValue {
-        let bytes = frame.as_bytes();
-        let mut raw_value = i8::from_le_bytes([bytes[6]]);
+        let bytes = frame.as_bytes().split_at(8);
+        let value_bytes = bytes.1;
+        let mut raw_value = i8::from_le_bytes([value_bytes[6]]);
         raw_value >>= 6;
         raw_value &= 1;
         let value = raw_value as f32;

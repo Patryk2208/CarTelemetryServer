@@ -1,4 +1,4 @@
-use std::thread::sleep;
+use tokio::time::sleep;
 use std::time::{Duration, Instant};
 
 pub struct RefreshRate {
@@ -27,6 +27,7 @@ impl RefreshRate {
 }
 
 pub struct FlowControl {
+    pub last_iteration_start: Option<Instant>,
     pub iteration_start: Instant,
     pub send_duration: Duration,
     pub refresh_rate: RefreshRate
@@ -35,23 +36,29 @@ pub struct FlowControl {
 impl FlowControl {
     pub fn new() -> Self {
         Self {
+            last_iteration_start: None,
             iteration_start: Instant::now(),
             send_duration: Duration::from_nanos(0),
             refresh_rate: RefreshRate { rate: RefreshRate::FAST }
         }
     }
     pub fn start_iteration(&mut self) {
-        self.iteration_start = Instant::now();
+        if self.last_iteration_start.is_none() {
+            self.iteration_start = Instant::now();
+        } else {
+            self.iteration_start = self.last_iteration_start.unwrap() + self.refresh_rate.rate;
+        }
     }
 
-    pub fn complete_iteration(&mut self) {
+    pub async fn complete_iteration(&mut self) {
         self.send_duration = self.iteration_start.elapsed();
+        self.last_iteration_start = Some(self.iteration_start);
         if self.send_duration >= self.refresh_rate.rate {
             self.refresh_rate.slow_down();
             return;
         } else if self.send_duration < self.refresh_rate.rate / 2 {
             self.refresh_rate.speed_up();
         }
-        sleep(self.refresh_rate.rate - self.send_duration);
+        sleep(self.refresh_rate.rate - self.send_duration).await;
     }
 }

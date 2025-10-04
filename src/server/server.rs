@@ -56,9 +56,7 @@ impl Server {
                         *current = Some(connection);
                     }
 
-                    let time = Instant::now();
                     self.transfer_metrics().await;
-                    println!("Metrics transfer time: {:?}", time.elapsed());
 
                     println!("Client disconnected, waiting for new connection...");
                 }
@@ -79,9 +77,9 @@ impl Server {
             }
             match self.send_telemetry(message).await {
                 Ok(_) => {},
-                Err(_) => {}
+                Err(_) => break
             }
-            self.metric_sender.flow_control.complete_iteration();
+            self.metric_sender.flow_control.complete_iteration().await;
         }
     }
 

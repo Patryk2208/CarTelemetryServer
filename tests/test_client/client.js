@@ -61,11 +61,11 @@ class TelemetryTester {
                 this.avgLatency = (this.avgLatency * (this.messageCount - 1) + latency) / this.messageCount;
             }
 
-            if (this.messageCount % (60 * 3) === 0) {
+            if (this.messageCount % (30 * 3) === 0) {
                 this.printCurrentStats();
             }
 
-            if (this.messageCount % 1200 === 1) {
+            if (this.messageCount % (30 * 10) === 1) {
                 console.log('Sample message:');
                 console.log(JSON.stringify(message, null, 2));
             }

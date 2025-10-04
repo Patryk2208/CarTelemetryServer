@@ -16,12 +16,13 @@ use crate::processor::telemetry::Telemetry;
 use crate::processor::types::{BRAKE_ON_OFF, G_LAT, G_LONG, SPEED, STEERING, YAW};
 
 pub fn create_metric_manager() -> Arc<Mutex<MetricManager>> {
+    let history_size = 50;
     let subscribers:Vec<Box<dyn Telemetry>> = vec![
-        Box::new(Balance::new(100)), //todo size
-        Box::new(GG::new(100)), //todo size
-        Box::new(Smoothness::new(100)), //todo size
-        Box::new(Grip::new(100)), //todo size
-        Box::new(BrakingSignal::new(100)) //todo size
+        Box::new(Balance::new(history_size)), //todo size
+        Box::new(GG::new(history_size)), //todo size
+        Box::new(Smoothness::new(history_size)), //todo size
+        Box::new(Grip::new(history_size)), //todo size
+        Box::new(BrakingSignal::new(history_size)) //todo size
     ];
     let mut subscriptions = HashMap::new();
     subscriptions.insert(SPEED, vec![0, 1]);

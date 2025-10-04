@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::collections::HashMap;
 use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
@@ -62,7 +63,8 @@ impl Telemetry for BrakingSignal {
         };
 
         self.history.push(p_b_s);
-        self.new_messages_since_last_concatenation += 1;
+        self.new_messages_since_last_concatenation = min(
+            self.new_messages_since_last_concatenation + 1, self.history.capacity() as u16);
     }
 
     fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
@@ -73,15 +75,15 @@ impl Telemetry for BrakingSignal {
         let mut count = 0;
 
         for p_b_s in self.history.iter_rev() {
+            if count >= self.new_messages_since_last_concatenation {
+                break;
+            }
+
             concat_g_force += p_b_s.g_force;
             concat_total_braking_time += p_b_s.total_braking_time.unwrap_or(0.0); //todo
             concat_peak_brake_force += p_b_s.peak_brake_force.unwrap_or(0.0); //todo
             concat_timestamp += p_b_s.timestamp;
             count += 1;
-
-            if count > self.new_messages_since_last_concatenation {
-                break;
-            }
         }
         
         if count == 0 {

@@ -16,7 +16,7 @@ mod common;
 
 fn main() {
     let metric_manager = create_metric_manager();
-    let buffer_size = 100;
+    let buffer_size = 10;
     let (telemetry_sender, telemetry_receiver): (Sender<(CanFrame, u64)>, Receiver<(CanFrame, u64)>) =
         tokio::sync::mpsc::channel(buffer_size);
     let interface = "vcan0"; //for testing

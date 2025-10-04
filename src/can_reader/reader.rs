@@ -44,7 +44,7 @@ impl CanReader {
                     match self.frame_sender.try_send((frame, timestamp)) {
                         Ok(_) => {}
                         Err(mpsc::error::TrySendError::Full(_)) => {
-                            eprintln!("[CAN Reader] Can't send frame!!! Should not happen!");
+                            eprintln!("[CAN Reader] Can't send frame");
                         }
                         Err(mpsc::error::TrySendError::Closed(_)) => {
                             eprintln!("[CAN Reader] Channel closed");

@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::collections::HashMap;
 use serde_json::json;
 use crate::common::circular_buffer::CircularBuffer;
@@ -67,7 +68,8 @@ impl Telemetry for Grip {
         };
         
         self.history.push(p_s_r);
-        self.new_messages_since_last_concatenation += 1;
+        self.new_messages_since_last_concatenation = min(
+            self.new_messages_since_last_concatenation + 1, self.history.capacity() as u16);
     }
 
     fn produce_concatenated_message(&mut self) -> (String, serde_json::Value) {
@@ -78,15 +80,15 @@ impl Telemetry for Grip {
         let mut count = 0;
 
         for p_g in self.history.iter_rev() {
+            if count >= self.new_messages_since_last_concatenation {
+                break;
+            }
+            
             concat_grip_force += p_g.grip_force;
             concat_max_grip_per_corner += p_g.max_grip_per_corner.unwrap_or(0.0); //todo
             concat_max_grip_per_ride += p_g.max_grip_per_ride;
             concat_timestamp += p_g.timestamp;
             count += 1;
-
-            if count > self.new_messages_since_last_concatenation {
-                break;
-            }
         }
 
         if count == 0 {
