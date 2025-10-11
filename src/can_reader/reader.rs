@@ -1,5 +1,5 @@
 use socketcan;
-use tokio::sync::{mpsc};
+use tokio::sync::mpsc;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -10,7 +10,8 @@ pub struct CanReader {
     pub interface: String,
     pub message_filter: Vec<CanFilter>,
     pub read_timeout: Duration,
-    pub frame_sender: mpsc::Sender<(CanFrame, u64)>
+    pub frame_sender: mpsc::Sender<(CanFrame, u64)>,
+    pub shutdown_channel: mpsc::Receiver<()>
 }
 impl CanReader {
 
@@ -22,7 +23,7 @@ impl CanReader {
         })
     }
 
-    fn run_can_reader(self) -> Result<()>{
+    fn run_can_reader(mut self) -> Result<()>{
         let socket = socketcan::CanSocket::open(&self.interface)
             .with_context(|| format!("Failed to open CAN interface {}", self.interface))?;
         socket.set_read_timeout(self.read_timeout)?;
@@ -31,6 +32,18 @@ impl CanReader {
                  self.interface, self.message_filter);
 
         loop {
+            match self.shutdown_channel.try_recv() {
+                Ok(_) => {
+                    println!("[CAN Reader] Shutting down");
+                    break;
+                }
+                Err(err) => {
+                    if err != mpsc::error::TryRecvError::Empty {
+                        eprintln!("[CAN Reader] Error receiving shutdown signal: {}", err);
+                        break;
+                    }
+                }
+            }
             match socket.read_frame() {
                 Ok(frame) => {
                     let timestamp: u64;

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use socketcan::{CanFrame, Frame};
-use tokio::sync::{mpsc, Mutex};
+use tokio::select;
+use tokio::sync::{broadcast, mpsc, Mutex};
 use crate::processor::metric_manager::MetricManager;
 use crate::processor::types::TelemetryValue;
 use crate::can_rules::can_message_ids::{MessageID};
@@ -10,29 +11,50 @@ use crate::processor::decoders::TelemetryDecoder;
 pub struct TelemetryProcessor {
     can_receiver: mpsc::Receiver<(CanFrame, u64)>,
     message_decoders: HashMap<MessageID, Vec<Box<dyn TelemetryDecoder>>>,
-    metric_manager: Arc<Mutex<MetricManager>>
+    metric_manager: Arc<Mutex<MetricManager>>,
+    shutdown_channel: broadcast::Receiver<()>
 }
 
 impl TelemetryProcessor {
     pub fn new(can_receiver: mpsc::Receiver<(CanFrame, u64)>,
                message_decoders: HashMap<MessageID, Vec<Box<dyn TelemetryDecoder>>>,
-               metric_manager: Arc<Mutex<MetricManager>>) -> Self {
+               metric_manager: Arc<Mutex<MetricManager>>,
+               shutdown_channel: broadcast::Receiver<()>
+    ) -> Self {
         Self {
             can_receiver,
             message_decoders,
-            metric_manager
+            metric_manager,
+            shutdown_channel
         }
     }
 
     pub async fn run(mut self) {
-        while let Some((frame, timestamp)) = self.can_receiver.recv().await {
-            if !self.message_decoders.contains_key(&frame.can_id().as_raw()) {
-                continue;
-            }
-            let decoded_messages = self.process_frame(frame, timestamp);
-            {
-                let mut manager = self.metric_manager.lock().await;
-                manager.notify_subscribers(decoded_messages);
+        loop {
+            select! {
+                biased;
+                _ = self.shutdown_channel.recv() => {
+                    println!("[Processor] Shutting down");
+                    break;
+                }
+                can_results = self.can_receiver.recv() => {
+                    match can_results {
+                         Some((frame, timestamp)) => {
+                            if !self.message_decoders.contains_key(&frame.can_id().as_raw()) {
+                                continue;
+                            }
+                            let decoded_messages = self.process_frame(frame, timestamp);
+                            {
+                                let mut manager = self.metric_manager.lock().await;
+                                manager.notify_subscribers(decoded_messages);
+                            }
+                        },
+                        None => {
+                            println!("[Processor] Channel closed. Shutting down");
+                            break;
+                        }   
+                    }
+                }
             }
         }
     }

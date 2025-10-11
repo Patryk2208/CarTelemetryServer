@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use socketcan::CanFrame;
 use tokio::sync::mpsc::Receiver;
-use tokio::sync::Mutex;
+use tokio::sync::{broadcast, Mutex};
 use crate::can_rules::can_message_ids::{MessageID, BRAKE_ID, FORCES_ID, SPEED_ID, STEERING_ID};
 use crate::processor::adv_metric_balance::Balance;
 use crate::processor::adv_metric_braking_signal::BrakingSignal;
@@ -40,7 +40,8 @@ pub fn create_metric_manager() -> Arc<Mutex<MetricManager>> {
 
 pub fn create_telemetry_processor(
     receiver: Receiver<(CanFrame, u64)>,
-    metric_manager: Arc<Mutex<MetricManager>>
+    metric_manager: Arc<Mutex<MetricManager>>,
+    shutdown: broadcast::Receiver<()>
 ) -> TelemetryProcessor {
     let mut telemetry_decoder: HashMap<MessageID, Vec<Box<dyn TelemetryDecoder>>> = HashMap::new();
     telemetry_decoder.insert(SPEED_ID, vec![Box::new(SpeedDecoder {})]);
@@ -52,5 +53,5 @@ pub fn create_telemetry_processor(
     telemetry_decoder.insert(STEERING_ID, vec![Box::new(SteeringAngleDecoder {})]);
     telemetry_decoder.insert(BRAKE_ID, vec![Box::new(BrakeOnOffDecoder {})]);
 
-    TelemetryProcessor::new(receiver, telemetry_decoder, metric_manager)
+    TelemetryProcessor::new(receiver, telemetry_decoder, metric_manager, shutdown)
 }

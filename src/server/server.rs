@@ -2,10 +2,10 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use futures_util::{stream, SinkExt, StreamExt};
 use serde_json::json;
-use tokio::net;
+use tokio::{net, select};
 use tokio::net::TcpListener;
+use tokio::sync::broadcast;
 use tokio::sync::Mutex;
-use tokio::time::Instant;
 use tokio_tungstenite::WebSocketStream;
 use tungstenite::{Message, Utf8Bytes};
 use crate::processor::metric_manager::MetricManager;
@@ -26,60 +26,116 @@ pub struct MetricSender {
 pub struct Server {
     listener: TcpListener,
     current_connection: Arc<Mutex<Option<WebSocketConnection>>>,
-    metric_sender: MetricSender
+    metric_sender: MetricSender,
+    shutdown_channel: broadcast::Receiver<()>
 }
 
 impl Server {
-    pub async fn new(addr: &str, metric_sender: MetricSender) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(addr: &str, metric_sender: MetricSender, shutdown: broadcast::Receiver<()>) -> Result<Self, Box<dyn std::error::Error>> {
         let listener = TcpListener::bind(addr).await?;
         println!("WebSocket server listening on {}", addr);
 
         Ok(Self {
             listener,
             current_connection: Arc::new(Mutex::new(None)),
-            metric_sender
+            metric_sender,
+            shutdown_channel: shutdown
         })
     }
     pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         loop {
-            match self.listener.accept().await {
-                Ok((stream, addr)) => {
-                    println!("Client connected from {}", addr);
-
-                    let ws_stream = tokio_tungstenite::accept_async(stream).await?;
-                    let (sender, /*receiver*/_) = ws_stream.split();
-
-                    let connection = WebSocketConnection { sender };
-
-                    {
-                        let mut current = self.current_connection.lock().await;
-                        *current = Some(connection);
-                    }
-
-                    self.transfer_metrics().await;
-
-                    println!("Client disconnected, waiting for new connection...");
+            select! {
+                biased;
+                _ = self.shutdown_channel.recv() => {
+                    println!("[Server] Shutting down");
+                    return Ok(());
                 }
-                Err(e) => {
-                    eprintln!("Accept error: {}", e);
-                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                listener_result = self.listener.accept() => {
+                    match listener_result {
+                        Ok((stream, addr)) => {
+                            println!("Client connected from {}", addr);
+
+                            let ws_stream = tokio_tungstenite::accept_async(stream).await?;
+                            let (sender, /*receiver*/_) = ws_stream.split();
+
+                            let connection = WebSocketConnection { sender };
+
+                            {
+                                let mut current = self.current_connection.lock().await;
+                                *current = Some(connection);
+                            }
+
+                            let was_cancelled = self.transfer_metrics().await;
+                            if was_cancelled {
+                                println!("[Server] Shutting down");
+                                return Ok(());
+                            }
+
+                            println!("Client disconnected, waiting for new connection...");
+                        }
+                        Err(e) => {
+                            eprintln!("Accept error: {}", e);
+                            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                        }
+                    }
                 }
             }
         }
     }
-    pub async fn transfer_metrics(&mut self) {
+    pub async fn transfer_metrics(&mut self) -> bool {
         loop {
             self.metric_sender.flow_control.start_iteration();
             let message: serde_json::Value;
             {
-                let mut manager = self.metric_sender.metric_manager.lock().await;
-                message = manager.get_message();
+                select! {
+                    biased;
+                    _ = self.shutdown_channel.recv() => {
+                        println!("[Server] Metric manager lock interrupted");
+                        return true;
+                    }
+                    mut manager = self.metric_sender.metric_manager.lock() => {
+                        message = manager.get_message();
+                    }
+                }
             }
-            match self.send_telemetry(message).await {
-                Ok(_) => {},
-                Err(_) => break
+
+            {
+                select! {
+                    biased;
+                    _ = self.shutdown_channel.recv() => {
+                        println!("[Server] Websocket connection lock interrupted");
+                        return true;
+                    }
+                    mut current = self.current_connection.lock() => {
+                        if let Some(connection) = current.as_mut() {
+                            select! {
+                                biased;
+                                _ = self.shutdown_channel.recv() => {
+                                    println!("[Server] Websocket send interrupted");
+                                    return true;
+                                }
+                                send_result = connection.sender.send(prepare_telemetry_message(message)) => {
+                                    match send_result {
+                                        Ok(_) => {},
+                                        Err(e) => {
+                                            eprintln!("[Server] Send failed: {}, closing connection", e);
+                                            *current = None;
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            self.metric_sender.flow_control.complete_iteration().await;
+            select! {
+                _ = self.shutdown_channel.recv() => {
+                    println!("[Server] Sleep interrupted");
+                    return true;
+                }
+                _ = self.metric_sender.flow_control.complete_iteration() => {}
+            }
         }
     }
 
@@ -114,24 +170,6 @@ impl Server {
             }
         }
     }*/
-
-    pub async fn send_telemetry(&self, telemetry: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
-        let mut current = self.current_connection.lock().await;
-
-        if let Some(connection) = current.as_mut() {
-
-            match connection.sender.send(prepare_telemetry_message(telemetry)).await {
-                Ok(()) => Ok(()),
-                Err(e) => {
-                    println!("Send failed: {}, closing connection", e);
-                    *current = None;
-                    Err(e.into())
-                }
-            }
-        } else {
-            Ok(())
-        }
-    }
 }
 
 fn prepare_telemetry_message(telemetry: serde_json::Value) -> Message {
