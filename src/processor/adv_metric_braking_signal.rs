@@ -88,9 +88,9 @@ impl Telemetry for BrakingSignal {
         
         if count == 0 {
             return (self.get_type(), json!({
-                "g_force": 0.0,
-                "total_braking_time": 0.0,
-                "peak_brake_force": 0.0,
+                "g_force": 0.0f32,
+                "total_braking_time": null,
+                "peak_brake_force": null,
                 "timestamp": 0
             }));
         }

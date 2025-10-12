@@ -93,9 +93,9 @@ impl Telemetry for Grip {
 
         if count == 0 {
             return (self.get_type(), json!({
-                "grip_force": 0.0,
-                "max_grip_per_corner": 0.0,
-                "max_grip_per_ride": 0.0,
+                "grip_force": 0.0f32,
+                "max_grip_per_corner": null,
+                "max_grip_per_ride": null,
                 "timestamp": 0
             }));
         }

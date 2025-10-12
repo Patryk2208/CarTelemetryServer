@@ -89,7 +89,7 @@ impl Telemetry for Smoothness {
         
         if count == 0 {
             return (self.get_type(), json!({
-                "smoothness_index": 0.0,
+                "smoothness_index": 0.0f32,
                 "timestamp": 0
             }));
         }

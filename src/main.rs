@@ -21,7 +21,7 @@ mod shutdown;
 #[tokio::main]
 async fn main() {
     let interface = "vcan0"; //for testing
-    let address = "127.0.0.1:8080";
+    let address = "10.81.51.199:8080"; //for testing
 
     let metric_manager = create_metric_manager();
     let buffer_size = 10;

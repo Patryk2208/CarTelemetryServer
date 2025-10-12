@@ -75,7 +75,7 @@ impl Telemetry for Balance {
         
         if count == 0 {
             return (self.get_type(), json!({
-                "balance_index": 0.0,
+                "balance_index": 0.0f32,
                 "timestamp": 0
             }));
         }

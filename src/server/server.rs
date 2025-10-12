@@ -120,7 +120,7 @@ impl Server {
                                         Err(e) => {
                                             eprintln!("[Server] Send failed: {}, closing connection", e);
                                             *current = None;
-                                            return true;
+                                            return false;
                                         }
                                     }
                                 }
