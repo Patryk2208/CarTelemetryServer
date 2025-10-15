@@ -8,7 +8,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use crate::can_reader::factory::create_can_reader;
 use crate::processor::factory::create_metric_manager;
 use crate::processor::factory::create_telemetry_processor;
-use crate::server::factory::create_server;
+use crate::server::factory::{create_network_manager, create_server};
 use crate::shutdown::ShutdownManager;
 
 mod can_reader;
@@ -43,10 +43,10 @@ async fn main() {
         processor_shutdown
     );
     let server = create_server(
-        address,
         Arc::clone(&metric_manager),
         server_shutdown
     );
+    let network_manager = create_network_manager(server);
 
     let async_runtime:Runtime;
     match runtime::Builder::new_multi_thread()
@@ -64,39 +64,41 @@ async fn main() {
         processor.run().await;
     });
     let server_handle = async_runtime.spawn(async move {
-        match server.await {
-            Ok(mut server) => {
-                match server.run().await {
-                    Ok(_) => {},
-                    Err(_) => {}
-                }
-            },
-            Err(_) => {}
-        }
+        network_manager.run().await;
     });
 
     let reader_handle = reader.start();
     match reader_handle.join() {
-        Ok(_) => {}
-        Err(_) => {}
-    }
-    let res = join!(shutdown_handle, processor_handle, server_handle);
-    match res.0 {
-        Ok(_) => {},
+        Ok(_) => {
+            print!("[Reader] shut down correctly");
+        }
         Err(_) => {
-            //todo cancel all
+            print!("[Reader] shut down incorrectly");
         }
     }
-    match res.1 {
-        Ok(_) => {},
+    let res = join!(processor_handle, server_handle, shutdown_handle);
+    match res.0 { 
+        Ok(_) => {
+            println!("[Processor] shut down correctly");
+        }
         Err(_) => {
-            //todo cancel all
+            println!("[Processor] shut down incorrectly");
         }
     }
-    match res.2 {
-        Ok(_) => {},
+    match res.1 { 
+        Ok(_) => {
+            println!("[Server] shut down correctly");
+        }
         Err(_) => {
-            //todo cancel all
+            println!("[Server] shut down incorrectly");
+        }
+    }
+    match res.2 { 
+        Ok(_) => {
+            println!("Shutdown complete");
+        }
+        Err(_) => {
+            println!("Shutdown complete with errors");
         }
     }
 }

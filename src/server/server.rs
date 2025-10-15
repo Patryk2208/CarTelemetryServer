@@ -24,62 +24,88 @@ pub struct MetricSender {
 }
 
 pub struct Server {
-    listener: TcpListener,
+    listener: Option<TcpListener>,
     current_connection: Arc<Mutex<Option<WebSocketConnection>>>,
     metric_sender: MetricSender,
     shutdown_channel: broadcast::Receiver<()>
 }
 
 impl Server {
-    pub async fn new(addr: &str, metric_sender: MetricSender, shutdown: broadcast::Receiver<()>) -> Result<Self, Box<dyn std::error::Error>> {
-        let listener = TcpListener::bind(addr).await?;
-        println!("WebSocket server listening on {}", addr);
-
-        Ok(Self {
-            listener,
+    pub fn new(metric_sender: MetricSender, shutdown: broadcast::Receiver<()>) -> Self {
+        Self {
+            listener: None,
             current_connection: Arc::new(Mutex::new(None)),
             metric_sender,
             shutdown_channel: shutdown
-        })
+        }
     }
-    pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        loop {
-            select! {
-                biased;
-                _ = self.shutdown_channel.recv() => {
-                    println!("[Server] Shutting down");
-                    return Ok(());
-                }
-                listener_result = self.listener.accept() => {
-                    match listener_result {
-                        Ok((stream, addr)) => {
-                            println!("Client connected from {}", addr);
 
-                            let ws_stream = tokio_tungstenite::accept_async(stream).await?;
-                            let (sender, /*receiver*/_) = ws_stream.split();
+    pub async fn assign_address(&mut self, addr: &str) -> Result<(), String> {
+        let bound = TcpListener::bind(addr).await;
+        match bound {
+            Ok(listener) => {
+                self.listener = Some(listener);
+                println!("Server listening on {}", addr);
+                Ok(())
+            }
+            Err(error) => {
+                Err(error.to_string())
+            }
+        }
 
-                            let connection = WebSocketConnection { sender };
+    }
 
-                            {
-                                let mut current = self.current_connection.lock().await;
-                                *current = Some(connection);
+    pub async fn run(&mut self) -> Result<(), String> {
+        if let Some(list) = self.listener.take() {
+            loop {
+                select! {
+                    biased;
+                    _ = self.shutdown_channel.recv() => {
+                        println!("[Server] Shutting down");
+                        return Ok(());
+                    }
+                    listener_result = list.accept() => {
+                        match listener_result {
+                            Ok((stream, addr)) => {
+                                println!("Client connected from {}", addr);
+
+                                let res_ws_stream = tokio_tungstenite::accept_async(stream).await;
+                                let ws_stream;
+                                match res_ws_stream {
+                                    Ok(wss) => {
+                                        ws_stream = wss;
+                                    },
+                                    Err(error) => {
+                                        return Err(error.to_string());
+                                    }
+                                }
+                                let (sender, /*receiver*/_) = ws_stream.split();
+
+                                let connection = WebSocketConnection { sender };
+
+                                {
+                                    let mut current = self.current_connection.lock().await;
+                                    *current = Some(connection);
+                                }
+
+                                let was_cancelled = self.transfer_metrics().await;
+                                if was_cancelled {
+                                    println!("[Server] Shutting down");
+                                    return Ok(());
+                                }
+
+                                println!("Client disconnected, waiting for new connection...");
+                            },
+                            Err(e) => {
+                                eprintln!("Accept error: {}", e);
+                                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                             }
-
-                            let was_cancelled = self.transfer_metrics().await;
-                            if was_cancelled {
-                                println!("[Server] Shutting down");
-                                return Ok(());
-                            }
-
-                            println!("Client disconnected, waiting for new connection...");
-                        }
-                        Err(e) => {
-                            eprintln!("Accept error: {}", e);
-                            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                         }
                     }
                 }
             }
+        } else {
+            Err("listener not set".to_string())
         }
     }
     pub async fn transfer_metrics(&mut self) -> bool {

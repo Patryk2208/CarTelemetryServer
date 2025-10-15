@@ -2,19 +2,22 @@ use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex};
 use crate::processor::metric_manager::MetricManager;
 use crate::server::flow_control::{FlowControl, RefreshRate};
+use crate::server::network_manager::NetworkManager;
 use crate::server::server::{Server, MetricSender};
 
-pub async fn create_server(
-    address: &str,
+pub fn create_server(
     metric_manager: Arc<Mutex<MetricManager>>,
     shutdown: broadcast::Receiver<()>
-) -> Result<Server, String> {
+) -> Server {
     let metric_sender = MetricSender {
         metric_manager,
         flow_control: FlowControl::new(RefreshRate{rate: RefreshRate::FAST})
     };
-    match Server::new(address, metric_sender, shutdown).await {
-        Ok(server) => Ok(server),
-        Err(e) => Err(e.to_string())
-    }
+    Server::new(metric_sender, shutdown)
+}
+
+pub fn create_network_manager(
+    server: Server
+) -> NetworkManager {
+    NetworkManager::new(server)
 }
