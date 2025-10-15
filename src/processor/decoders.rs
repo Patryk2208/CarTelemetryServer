@@ -1,3 +1,4 @@
+use serde::Serialize;
 use socketcan::{CanFrame};
 use socketcan::frame::AsPtr;
 use crate::processor::types::{TelemetryValue, BRAKE_ON_OFF, G_LAT, G_LONG, SPEED, STEERING, YAW};
@@ -45,7 +46,7 @@ impl TelemetryDecoder for GForceLatDecoder {
         let bytes = frame.as_bytes().split_at(8);
         let value_bytes = bytes.1;
         let raw_value = u16::from_be_bytes([value_bytes[1], value_bytes[2]]);
-        let mut value = (raw_value << 4) as f32;
+        let mut value = ((raw_value << 4) >> 4) as f32;
         value *= 0.0009765625;
         value -= 2.0;
         TelemetryValue{

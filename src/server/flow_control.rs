@@ -5,9 +5,10 @@ pub struct RefreshRate {
     pub rate: Duration
 }
 impl RefreshRate {
-    const SLOW: Duration = Duration::from_nanos(66_666_666);   // 15 Hz
-    const MEDIUM: Duration = Duration::from_nanos(33_333_333); // 30 Hz
-    const FAST: Duration = Duration::from_nanos(16_666_666);   // 60 Hz
+    pub const SLOW: Duration = Duration::from_nanos(66_666_666);   // 15 Hz
+    pub const MEDIUM: Duration = Duration::from_nanos(33_333_333); // 30 Hz
+    pub const FAST: Duration = Duration::from_nanos(16_666_666);   // 60 Hz
+    pub const ULTRAFAST: Duration = Duration::from_nanos(5_000_000); //testable
     pub fn speed_up(&mut self) {
         match self.rate {
             Self::SLOW => self.rate = Self::MEDIUM,
@@ -34,12 +35,12 @@ pub struct FlowControl {
 }
 
 impl FlowControl {
-    pub fn new() -> Self {
+    pub fn new(refresh_rate: RefreshRate) -> Self {
         Self {
             last_iteration_start: None,
             iteration_start: Instant::now(),
             send_duration: Duration::from_nanos(0),
-            refresh_rate: RefreshRate { rate: RefreshRate::FAST }
+            refresh_rate: refresh_rate
         }
     }
     pub fn start_iteration(&mut self) {

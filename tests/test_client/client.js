@@ -1,5 +1,6 @@
 import WebSocket from 'ws';
 import { performance } from 'perf_hooks';
+import { parseWebSocketMessage } from './dataParsing.ts';
 
 class TelemetryTester {
     constructor() {
@@ -88,6 +89,17 @@ class TelemetryTester {
            Duration: ${elapsed.toFixed(2)}s
             `
         );
+    }
+
+    tryParse(message) {
+        let parsed = parseWebSocketMessage(message);
+        if (parsed) {
+            console.log(message);
+            console.log('\n\nParsed message:');
+            console.log(JSON.stringify(parsed, null, 2));
+        } else {
+            console.log('Failed to parse message');
+        }
     }
 
     printFinalStats() {

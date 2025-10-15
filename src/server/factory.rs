@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex};
 use crate::processor::metric_manager::MetricManager;
-use crate::server::flow_control::FlowControl;
+use crate::server::flow_control::{FlowControl, RefreshRate};
 use crate::server::server::{Server, MetricSender};
 
 pub async fn create_server(
@@ -11,7 +11,7 @@ pub async fn create_server(
 ) -> Result<Server, String> {
     let metric_sender = MetricSender {
         metric_manager,
-        flow_control: FlowControl::new()
+        flow_control: FlowControl::new(RefreshRate{rate: RefreshRate::FAST})
     };
     match Server::new(address, metric_sender, shutdown).await {
         Ok(server) => Ok(server),
