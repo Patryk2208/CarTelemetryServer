@@ -13,3 +13,4 @@ tungstenite = "0.28.0"
 serde = { version = "1.0.226", features = ["derive"] }
 futures-util = "0.3.31"
 futures = "0.3.31"
+sysinfo = "0.37.2"

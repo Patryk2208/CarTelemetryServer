@@ -17,7 +17,8 @@ pub fn create_server(
 }
 
 pub fn create_network_manager(
-    server: Server
+    server: Server,
+    target_ssid: &str,
 ) -> NetworkManager {
-    NetworkManager::new(server)
+    NetworkManager::new(server, target_ssid, 8080, 1)
 }

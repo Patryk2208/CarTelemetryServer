@@ -1,6 +1,7 @@
 extern crate core;
 
 use std::sync::Arc;
+use std::time::Duration;
 use socketcan::CanFrame;
 use tokio::{join, runtime };
 use tokio::runtime::Runtime;
@@ -8,6 +9,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use crate::can_reader::factory::create_can_reader;
 use crate::processor::factory::create_metric_manager;
 use crate::processor::factory::create_telemetry_processor;
+use crate::run_configuration::RunConfiguration;
 use crate::server::factory::{create_network_manager, create_server};
 use crate::shutdown::ShutdownManager;
 
@@ -17,11 +19,11 @@ mod can_rules;
 mod server;
 mod common;
 mod shutdown;
+mod run_configuration;
 
 #[tokio::main]
 async fn main() {
-    let interface = "vcan0"; //for testing
-    let address = "10.81.51.199:8080"; //for testing
+    let config = RunConfiguration::new();
 
     let metric_manager = create_metric_manager();
     let buffer_size = 10;
@@ -33,7 +35,7 @@ async fn main() {
         processor_shutdown,
         reader_shutdown) = ShutdownManager::new();
     let reader = create_can_reader(
-        interface,
+        config.interface.as_str(),
         telemetry_sender,
         reader_shutdown
     );
@@ -46,7 +48,7 @@ async fn main() {
         Arc::clone(&metric_manager),
         server_shutdown
     );
-    let network_manager = create_network_manager(server);
+    let network_manager = create_network_manager(server, config.target_ssid.as_str());
 
     let async_runtime:Runtime;
     match runtime::Builder::new_multi_thread()
@@ -70,10 +72,10 @@ async fn main() {
     let reader_handle = reader.start();
     match reader_handle.join() {
         Ok(_) => {
-            print!("[Reader] shut down correctly");
+            println!("[Reader] shut down correctly");
         }
         Err(_) => {
-            print!("[Reader] shut down incorrectly");
+            println!("[Reader] shut down incorrectly");
         }
     }
     let res = join!(processor_handle, server_handle, shutdown_handle);
@@ -95,10 +97,13 @@ async fn main() {
     }
     match res.2 { 
         Ok(_) => {
-            println!("Shutdown complete");
+            println!("Shutdown almost complete");
         }
         Err(_) => {
-            println!("Shutdown complete with errors");
+            println!("Shutdown almost complete with errors");
         }
     }
+    async_runtime.shutdown_timeout(Duration::from_secs(10));
+    println!("[AsyncRuntime] shut down correctly");
+    println!("Shutdown complete");
 }
