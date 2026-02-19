@@ -1,0 +1,1 @@
+Rpi based rust server that does stream processing and serving of car's telemetry from the obd-2 port, obd-2 translation reverse-engineered and not universal, the code universal, of course needs follow up on the pi.
